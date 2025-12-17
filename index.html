@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TERMINAL CONNECTION</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="crt-overlay"></div>
+    <div id="screen">
+        <div id="output"></div>
+        <div id="input-line">
+            <span class="prompt">&gt;</span>
+            <input type="text" id="cmd" autofocus autocomplete="off" spellcheck="false">
+        </div>
+    </div>
+    <div id="loading-indicator" class="hidden">Thinking...</div>
+    <script src="events.js"></script>
+    <script src="ai.js"></script>
+    <script src="world.js"></script>
+    <script src="characters.js"></script>
+    <script src="items.js"></script>
+    <script src="coordinator.js"></script>
+    <script src="game.js"></script>
+</body>
+
+</html>
