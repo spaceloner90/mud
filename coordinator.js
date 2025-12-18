@@ -1,26 +1,14 @@
 // API_KEY is defined in ai.js which is loaded first
 
 class AICoordinator {
-    constructor(game) {
+    constructor(game, secrets = {}) {
         this.game = game;
         this.history = []; // Unlimited history as requested
         this.isThinking = false;
 
         // Registry of game secrets that can be revealed by the Director
-        this.secrets = {
-            'grove_path': {
-                id: 'grove_path',
-                description: 'The path to the Ancient Grove lies East from the Clearing. Known by the Ghost.',
-                resolved: false,
-                revealFunc: () => this.game.revealExit('clearing', 'east')
-            },
-            'signet_ring': {
-                id: 'signet_ring',
-                description: 'Silas is hiding the Royal Signet Ring under the counter. Known by Lady Elara.',
-                resolved: false,
-                revealFunc: () => this.game.revealItem('signet_ring')
-            }
-        };
+        this.secrets = secrets;
+        this.reactionTimeout = null;
     }
 
     // Called by game.js whenever a broadcastEvent happens
@@ -33,20 +21,31 @@ class AICoordinator {
         console.log(`[Director] Recorded: ${event.type} - ${event.description}`);
 
         // Check for VICTORY
-        if (getItemsByHolder('player').some(i => i.id === 'signet_ring')) {
+        if (this.game.getItemsByHolder('player').some(i => i.id === 'signet_ring')) {
             this.game.victory();
             return;
         }
 
-        // Check for REVEALS (Information-based) is now handled by the AI Director below
+        // DEBOUNCE REACTION LOGIC
+        // Clear any pending reaction to prevent request storms while navigating
+        if (this.reactionTimeout) {
+            clearTimeout(this.reactionTimeout);
+            this.reactionTimeout = null;
+        }
 
         // Decide if we should trigger a reaction (or check for reveals)
-        if (event.sourceId === 'player' && (event.type === 'say' || event.type === 'action' || event.type === 'leave')) {
-            // Player acted: Allow full response
-            setTimeout(() => this.directorThink({ allowResponse: true }), 500);
+        if (event.sourceId === 'player') {
+            if (event.type === 'leave') {
+                // Navigation: Wait 4s to ensure player settles in the room
+                console.log('[Director] Navigation detected. Queuing reaction in 4s...');
+                this.reactionTimeout = setTimeout(() => this.directorThink({ allowResponse: true }), 4000);
+            } else if (event.type === 'say' || event.type === 'action') {
+                // Action/Speech: Wait 1s (debounced)
+                this.reactionTimeout = setTimeout(() => this.directorThink({ allowResponse: true }), 1000);
+            }
         } else if (event.type === 'say') {
-            // NPC spoke: Check for REVEALS ONLY. Do not trigger more dialogue.
-            setTimeout(() => this.directorThink({ allowResponse: false }), 500);
+            // NPC spoke: Check for reveals (passive), short delay
+            this.reactionTimeout = setTimeout(() => this.directorThink({ allowResponse: false }), 500);
         }
     }
 
@@ -55,7 +54,7 @@ class AICoordinator {
 
         // Find NPCs in the current room
         const currentRoomId = this.game.currentRoom.id;
-        const potentialResponders = getCharactersInRoom(currentRoomId).filter(c => c.id !== 'player');
+        const potentialResponders = this.game.getCharactersInRoom(currentRoomId).filter(c => c.id !== 'player');
 
         if (potentialResponders.length === 0) return;
 
@@ -187,7 +186,7 @@ IMPORTANT: Output ONLY valid JSON.
                 const secret = this.secrets[secretId];
                 if (secret && !secret.resolved) {
                     console.log(`[Director] Revealing Secret: ${secretId}`);
-                    secret.revealFunc();
+                    secret.revealFunc(this.game);
                     secret.resolved = true;
                 }
             });
@@ -195,13 +194,13 @@ IMPORTANT: Output ONLY valid JSON.
 
         // Handle Trigger
         if (decision.action === 'trigger' && decision.actorId) {
-            const character = characters[decision.actorId];
+            const character = this.game.characters[decision.actorId];
             if (character && character.aiAgent) {
                 console.log(`[Director] Triggering ${character.name} to speak...`);
                 // Do NOT pass global history. Use local agent memory.
                 character.aiAgent.forceThink();
             } else {
-                console.warn(`[Director] Tried to trigger unknown character ID: ${decision.actorId}`);
+                console.warn(`[Director] Trigger failed for ID: ${decision.actorId}. Character found: ${!!character}, AI Agent attached: ${!!(character && character.aiAgent)}`);
             }
         }
     }

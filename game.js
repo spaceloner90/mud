@@ -1,29 +1,11 @@
-const scenarios = {
-    1: {
-        id: 1,
-        title: "The Missing Signet Ring",
-        description: "A mystery in the village of Oakhaven.",
-        introText: "You are a Royal Courier sent from the Capital to track down Lady Elara, who is suspected of ensuring the disappearance of the Royal Signet Ring.<br>Your pursuit has led you to the sleepy village of Oakhaven, where her trail has gone cold.<br>Find her, and retrieve the Ring at all costs.",
-        setup: (game) => {
-            game.currentRoom = world['square'];
-            game.look();
-            // Initial Greeting
-            setTimeout(() => {
-                const crier = getCharactersInRoom('square').find(c => c.id === 'crier');
-                if (crier) {
-                    game.printDialogue(crier.name, "Welcome to our humble village, traveller. Beware the spirits!");
-                }
-            }, 1000);
-        }
-    }
-};
-
 class Game {
     constructor() {
         this.output = document.getElementById('output');
         this.input = document.getElementById('cmd');
         this.isProcessing = false;
         this.state = 'AUTH'; // Start in AUTH mode
+
+        this.inputHandler = new InputHandler(this); // Initialize InputHandler
 
         this.setupInput();
         this.startAuth();
@@ -34,7 +16,7 @@ class Game {
             if (e.key === 'Enter') {
                 const command = this.input.value.trim();
                 this.input.value = '';
-                this.handleInput(command);
+                this.inputHandler.handle(command); // Delegate to InputHandler
             }
         });
 
@@ -46,6 +28,15 @@ class Game {
 
     async startAuth() {
         await this.print('INITIALIZING SYSTEM...', 'system-msg', 20);
+
+        // Check LocalStorage for cached key
+        const cachedKey = localStorage.getItem('gemini_api_key');
+        if (cachedKey) {
+            this.printImmediate('Found cached session key. Authenticating...', 'dim');
+            this.validateKey(cachedKey);
+            return;
+        }
+
         this.printImmediate('Authentication Required.', 'error-msg');
         this.printImmediate('Please enter your Google Gemini API Key:', 'system-msg');
         this.input.focus();
@@ -73,6 +64,7 @@ class Game {
             }
 
             window.API_KEY = key;
+            localStorage.setItem('gemini_api_key', key); // Save for next time
             this.printImmediate('Access Granted.', 'discovery-msg');
             await new Promise(r => setTimeout(r, 500));
             this.start();
@@ -115,16 +107,27 @@ class Game {
         this.showMenu();
 
         // Initialize AI components now that we have the key
-        const coordinator = new AICoordinator(this);
-        this.coordinator = coordinator;
+        // Note: Coordinator is initialized by scenario.setup()
 
-        // Initialize AI Agents
-        Object.values(characters).forEach(char => {
-            const agent = new AIAgent(char, this);
-            char.aiAgent = agent;
-        });
-
+        // Initialize AI Agents for the loaded characters
         this.state = 'MENU';
+    }
+
+    initAgents() {
+        if (this.characters) {
+            Object.values(this.characters).forEach(char => {
+                const agent = new AIAgent(char, this);
+                char.aiAgent = agent;
+            });
+        }
+    }
+
+    getCharactersInRoom(roomId) {
+        return Object.values(this.characters || {}).filter(c => c.currentRoomId === roomId);
+    }
+
+    getItemsByHolder(holderId) {
+        return (this.itemsData || []).filter(item => item.holderId === holderId);
     }
 
     showMenu() {
@@ -133,6 +136,7 @@ class Game {
         Object.values(scenarios).forEach(s => {
             this.printImmediate(`[${s.id}] ${s.title} - ${s.description}`, 'menu-item');
         });
+        this.printImmediate('[X] Clear Cached Data & Reset', 'menu-item'); // Add Reset Option
     }
 
     launchScenario(id) {
@@ -158,7 +162,7 @@ class Game {
 
         // Check if speaker corresponds to a known character to get their color
         // This is a bit inefficient (searching on every speak) but fine for this scale
-        const character = Object.values(characters).find(c => c.name === speaker);
+        const character = Object.values(this.characters || {}).find(c => c.name === speaker);
         const colorStyle = character ? `style="color: ${character.color}"` : '';
 
         p.innerHTML = `<span class="speaker" ${colorStyle}>${speaker}:</span> "${text}"`;
@@ -179,213 +183,6 @@ class Game {
         this.printImmediate('Press ENTER to return to Main Menu...', 'system-msg');
     }
 
-    handleInput(command) {
-        console.log(`[Input] State: ${this.state}, Command: ${command}`);
-
-        if (this.state === 'VICTORY') {
-            window.location.reload();
-            return;
-        }
-
-        if (!command) return;
-
-        // Don't echo the full key if in AUTH mode to keep log clean
-        if (this.state === 'AUTH') {
-            this.printImmediate(`> [HIDDEN KEY]`, 'input-echo');
-            this.validateKey(command);
-            return;
-        }
-
-        this.printImmediate(`> ${command}`, 'input-echo');
-
-        if (this.state === 'MENU') {
-            const selection = parseInt(command);
-            if (scenarios[selection]) {
-                this.launchScenario(selection);
-            } else {
-                this.printImmediate('Invalid option. Please type the number of the scenario.', 'error-msg');
-            }
-            return;
-        }
-
-        if (this.state === 'PLAYING') {
-            this.handleGameInput(command);
-        }
-    }
-
-    handleGameInput(command) {
-        const parts = command.toLowerCase().split(' ');
-        const verb = parts[0];
-        const noun = parts[1]; // optional
-
-        switch (verb) {
-            case 'help':
-                const topic = parts[1];
-                if (topic) {
-                    switch (topic) {
-                        case 'give':
-                            this.printImmediate('Syntax: give [item] [character]', 'system-msg');
-                            this.printImmediate('Transfer an item from your inventory to another character.', 'system-msg');
-                            break;
-                        case 'look':
-                        case 'l':
-                            this.printImmediate('Syntax: look [target]', 'system-msg');
-                            this.printImmediate('Describes the current room, or a specific character/item.', 'system-msg');
-                            break;
-                        case 'say':
-                            this.printImmediate('Syntax: say [message]', 'system-msg');
-                            this.printImmediate('Speak to other characters in the room.', 'system-msg');
-                            break;
-                        case 'inventory':
-                        case 'inv':
-                            this.printImmediate('Syntax: inventory', 'system-msg');
-                            this.printImmediate('Lists items you are currently holding.', 'system-msg');
-                            break;
-                        case 'move':
-                        case 'n': case 's': case 'e': case 'w':
-                            this.printImmediate('Syntax: n, s, e, w', 'system-msg');
-                            this.printImmediate('Move in the specified compass direction.', 'system-msg');
-                            break;
-                        default:
-                            this.printImmediate(`No help available for "${topic}".`, 'error-msg');
-                    }
-                } else {
-                    this.printImmediate('COMMANDS: help, look (l), inventory (inv), give, say, n, s, e, w', 'system-msg');
-                    this.printImmediate('Type "help [command]" for more info.', 'system-msg');
-                }
-                break;
-            case 'l':
-            case 'look':
-                this.look(parts.slice(1).join(' ')); // Pass all remaining parts as arguments
-                break;
-            case 'say':
-                const speech = parts.slice(1).join(' ');
-                if (speech) {
-                    this.printDialogue('You', speech);
-                    // Broadcast speech event with audience context
-                    const othersInRoom = getCharactersInRoom(this.currentRoom.id).map(c => c.name).join(', ');
-                    const audience = othersInRoom ? ` to ${othersInRoom}` : ' to no one';
-                    this.broadcastEvent(new GameEvent('say', `Player said"${speech}"${audience}`, 'player'));
-                } else {
-                    this.printImmediate('What do you want to say?', 'error-msg');
-                }
-                break;
-            case 'n':
-            case 'north':
-                this.move('north');
-                break;
-            case 's':
-            case 'south':
-                this.move('south');
-                break;
-            case 'e':
-            case 'east':
-                this.move('east');
-                break;
-            case 'w':
-            case 'west':
-                this.move('west');
-                break;
-            case 'debug':
-                const targetName = parts.slice(1).join(' ').toLowerCase();
-                if (!targetName) {
-                    this.printImmediate('Usage: debug <character_name>', 'error-msg');
-                    break;
-                }
-                if (targetName === 'director') {
-                    this.printImmediate('--- DEBUG: Director (Global History) ---', 'system-msg');
-                    if (this.coordinator && this.coordinator.history) {
-                        this.printImmediate(`History (${this.coordinator.history.length} events):`);
-                        this.coordinator.history.forEach((h, i) => {
-                            this.printImmediate(`[${i}] ${new Date(h.timestamp).toLocaleTimeString()} [${h.sourceId}]: ${h.description}`, 'debug-log');
-                        });
-                    } else {
-                        this.printImmediate('Coordinator not initialized or no history.', 'error-msg');
-                    }
-                    this.printImmediate('--- END DEBUG ---', 'system-msg');
-                    break;
-                }
-
-                const debugChar = Object.values(characters).find(c => c.name.toLowerCase().includes(targetName));
-                if (debugChar) {
-                    this.printImmediate(`--- DEBUG: ${debugChar.name} (ID: ${debugChar.id}) ---`, 'system-msg');
-                    this.printImmediate(`Color: <span style="color:${debugChar.color}">${debugChar.color}</span>`);
-                    this.printImmediate(`Room: ${debugChar.currentRoomId}`);
-                    this.printImmediate(`Description: ${debugChar.description}`);
-                    this.printImmediate(`Memory (${debugChar.memory.length} events):`);
-                    debugChar.memory.forEach((m, i) => {
-                        this.printImmediate(`[${i}] ${new Date(m.timestamp).toLocaleTimeString()} - ${m.description}`, 'debug-log');
-                    });
-                    this.printImmediate('--- END DEBUG ---', 'system-msg');
-                } else {
-                    this.printImmediate(`Character not found: "${targetName}"`, 'error-msg');
-                }
-                break;
-            case 'give':
-                if (parts.length < 3) {
-                    this.printImmediate('Usage: give [item] [character]', 'error-msg');
-                    break;
-                }
-
-                // Complex parsing: "give [item] [character]"
-                // We need to find a split point where the left part is an item in inventory
-                // and the right part is a character in the room.
-                let itemToGive = null;
-                let recipient = null;
-
-                const playerItems = getItemsByHolder('player');
-                const roomChars = getCharactersInRoom(this.currentRoom.id);
-
-                // Try all split points
-                const eventWords = parts.slice(1);
-                // Ensure we leave at least one word for the character
-                for (let i = 1; i < eventWords.length; i++) {
-                    const itemCheck = eventWords.slice(0, i).join(' ').toLowerCase();
-                    const charCheck = eventWords.slice(i).join(' ').toLowerCase();
-
-                    // Check if player has this item
-                    const foundItem = playerItems.find(it => it.name.toLowerCase().includes(itemCheck));
-                    // Check if char is in room
-                    const foundChar = roomChars.find(c => c.name.toLowerCase().includes(charCheck));
-
-                    if (foundItem && foundChar) {
-                        itemToGive = foundItem;
-                        recipient = foundChar;
-                        break; // Found a valid match
-                    }
-                }
-
-                if (!itemToGive) {
-                    this.printImmediate("You don't have that item.", 'error-msg');
-                } else if (!recipient) {
-                    this.printImmediate("You don't see them here.", 'error-msg');
-                } else {
-                    // Execute Give
-                    itemToGive.holderId = recipient.id;
-                    this.printImmediate(`You gave the ${itemToGive.name} to ${recipient.name}.`, 'system-msg');
-
-                    // Specific event type for finer control if needed,
-                    // but 'action' ensures the coordinator picks it up.
-                    this.broadcastEvent(new GameEvent('action', `Player gave ${itemToGive.name} to ${recipient.name}.`, 'player'));
-                }
-                break;
-            case 'inv':
-            case 'inventory':
-                const myItems = getItemsByHolder('player');
-                if (myItems.length === 0) {
-                    this.printImmediate("You are not carrying anything.", 'system-msg');
-                } else {
-                    this.printImmediate("You are carrying:", 'system-msg');
-                    myItems.forEach(item => {
-                        this.printImmediate(`- ${item.name}`, 'item-name');
-                    });
-                }
-                break;
-            default:
-                this.printImmediate(`Unknown command: "${verb}". Type "help" for a list of commands.`, 'error-msg');
-        }
-    }
-
     look(target = '') {
         if (!this.currentRoom) return;
 
@@ -394,14 +191,14 @@ class Game {
             const lowerTarget = target.toLowerCase();
 
             // 1. Check Characters in Room
-            const roomChars = getCharactersInRoom(this.currentRoom.id);
+            const roomChars = this.getCharactersInRoom(this.currentRoom.id);
             const foundChar = roomChars.find(c => c.name.toLowerCase().includes(lowerTarget));
             if (foundChar) {
                 this.printImmediate(`<span style="color:${foundChar.color}">${foundChar.name}</span>`, 'char-name');
                 this.printImmediate(foundChar.description);
 
                 // Show items held by character
-                const charItems = getItemsByHolder(foundChar.id);
+                const charItems = this.getItemsByHolder(foundChar.id).filter(i => !i.isHidden);
                 if (charItems.length > 0) {
                     const itemNames = charItems.map(i => `<span class="item-name">${i.name}</span>`).join(', ');
                     this.printImmediate(`Holding: ${itemNames}`, 'room-items');
@@ -410,7 +207,7 @@ class Game {
             }
 
             // 2. Check Items in Room
-            const roomItems = getItemsByHolder(this.currentRoom.id).filter(i => !i.isHidden);
+            const roomItems = this.getItemsByHolder(this.currentRoom.id).filter(i => !i.isHidden);
             const foundRoomItem = roomItems.find(i => i.name.toLowerCase().includes(lowerTarget));
             if (foundRoomItem) {
                 this.printImmediate(foundRoomItem.name, 'item-name');
@@ -419,7 +216,7 @@ class Game {
             }
 
             // 3. Check Items in Player Inventory
-            const playerItems = getItemsByHolder('player');
+            const playerItems = this.getItemsByHolder('player');
             const foundPlayerItem = playerItems.find(i => i.name.toLowerCase().includes(lowerTarget));
             if (foundPlayerItem) {
                 this.printImmediate(foundPlayerItem.name, 'item-name');
@@ -436,14 +233,14 @@ class Game {
         this.printImmediate(this.currentRoom.description);
 
         // List Characters
-        const chars = getCharactersInRoom(this.currentRoom.id);
+        const chars = this.getCharactersInRoom(this.currentRoom.id);
         if (chars.length > 0) {
             const charNames = chars.map(c => `<span style="color:${c.color}">${c.name}</span>`).join(', ');
             this.printImmediate(`Also here: ${charNames}`, 'room-chars');
         }
 
         // List Items
-        const visibleItems = getItemsByHolder(this.currentRoom.id).filter(i => !i.isHidden);
+        const visibleItems = this.getItemsByHolder(this.currentRoom.id).filter(i => !i.isHidden);
         if (visibleItems.length > 0) {
             const itemNames = visibleItems.map(i => `<span class="item-name">${i.name}</span>`).join(', ');
             this.printImmediate(`Visible items: ${itemNames}`, 'room-items');
@@ -458,12 +255,12 @@ class Game {
             const nextRoomId = this.currentRoom.exits[direction];
 
             const prevRoomName = this.currentRoom.name;
-            const nextRoomName = world[nextRoomId].name;
+            const nextRoomName = this.world[nextRoomId].name;
 
             // Broadcast leave event to current room
             this.broadcastEvent(new GameEvent('leave', `Player moved from ${prevRoomName} to ${nextRoomName}.`, 'player'));
 
-            this.currentRoom = world[nextRoomId];
+            this.currentRoom = this.world[nextRoomId];
 
             // Broadcast enter event to new room
             this.broadcastEvent(new GameEvent('enter', `Player arrived from ${prevRoomName}.`, 'player'));
@@ -476,7 +273,7 @@ class Game {
 
     broadcastEvent(event) {
         // Find all characters in the current room
-        const chars = getCharactersInRoom(this.currentRoom.id);
+        const chars = this.getCharactersInRoom(this.currentRoom.id);
         chars.forEach(c => c.observe(event));
 
         // Notify Global Coordinator
@@ -488,7 +285,7 @@ class Game {
     npcSay(characterId, text) {
         if (!this.currentRoom) return;
 
-        const character = characters[characterId];
+        const character = this.characters[characterId];
         // Only show if the character is in the same room as the player
         if (character && character.currentRoomId === this.currentRoom.id) {
             this.printDialogue(character.name, text);
@@ -501,11 +298,11 @@ class Game {
     }
 
     npcGive(characterId, itemName, targetName) {
-        const npc = characters[characterId];
+        const npc = this.characters[characterId];
         if (!npc) return;
 
         // Verify NPC has item
-        const npcItems = getItemsByHolder(characterId);
+        const npcItems = this.getItemsByHolder(characterId);
         const item = npcItems.find(i => i.name.toLowerCase().includes(itemName.toLowerCase()));
 
         if (!item) {
@@ -521,7 +318,7 @@ class Game {
                 recipient = { id: 'player', name: 'You' };
             }
         } else {
-            const roomChars = getCharactersInRoom(npc.currentRoomId);
+            const roomChars = this.getCharactersInRoom(npc.currentRoomId);
             recipient = roomChars.find(c => c.name.toLowerCase().includes(targetName.toLowerCase()));
         }
 
@@ -551,7 +348,7 @@ class Game {
     }
 
     revealExit(roomId, direction) {
-        const room = world[roomId];
+        const room = this.world[roomId];
         if (room && room.hiddenExits && room.hiddenExits[direction]) {
             room.exits[direction] = room.hiddenExits[direction];
             delete room.hiddenExits[direction];
@@ -562,7 +359,7 @@ class Game {
     }
 
     revealItem(itemId) {
-        const item = itemsData.find(i => i.id === itemId);
+        const item = this.itemsData.find(i => i.id === itemId);
         if (item && item.isHidden) {
             item.isHidden = false;
             this.printImmediate(`[DISCOVERY] You noticed something new: ${item.name}!`, 'discovery-msg');

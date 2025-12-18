@@ -49,7 +49,7 @@ class AIAgent {
         const eventsText = recentHistory.map(e => `[${new Date(e.timestamp).toISOString()}] ${e.sourceId}: ${e.description}`).join('\n');
 
         // Add Inventory Context
-        const myItems = getItemsByHolder(this.character.id).map(i => i.name).join(', ');
+        const myItems = this.game.getItemsByHolder(this.character.id).map(i => i.name).join(', ');
         const inventoryText = myItems ? `You are holding: ${myItems}` : "You are holding nothing.";
 
         return `
