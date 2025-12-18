@@ -22,6 +22,9 @@ const scenarios = {
             // Load Items
             game.itemsData = SCENARIO_1_DATA.items; // Keep array for list filtering
 
+            // Load Lore
+            game.lore = SCENARIO_1_LORE;
+
             // Initialize Secrets in Coordinator
             game.coordinator = new AICoordinator(game, SCENARIO_1_DATA.secrets);
 

@@ -32,8 +32,10 @@ Descriptions should be evocative and detailed (2-3 sentences). Avoid simple "It 
 - **Mannerisms**: Fidgeting, staring, nervous ticks.
 - **Emotional Vibe**: Terrified, arrogant, defeated.
 
+**CRITICAL RULE**: Do not include spoken dialogue in the description (e.g., *He whispers "Help me"*). The description is strictly what the player SEES.
+
 **Bad:**
-> "A wealthy woman."
+> "A wealthy woman. She says 'Get away from me!'"
 
 **Good:**
 > "A wealthy traveler in extravagant, albeit muddy, finery. She holds a scented handkerchief to her nose and looks at the rustic goods with undisguised disdain. She seems personally offended by the dust."
@@ -66,7 +68,7 @@ new Character(
 new Character(
     'tom',
     'Old Tom',
-    'An elderly man with a wild white beard, staring deeply into his mug as if it holds the secrets of the universe. He sways slightly on his stool and mutters about "the great cosmic joke."',
+    'An elderly man with a wild white beard, staring deeply into his mug as if it holds the secrets of the universe. He sways slightly on his stool, his lips moving silently as if conversing with unseen entities.',
     'tavern',
     '#8A2BE2' // Blue Violet
 )

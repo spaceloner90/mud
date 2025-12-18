@@ -63,6 +63,9 @@ ${inventoryText}
 Global Game History:
 ${eventsText}
 
+WORLD LORE:
+${this.game.lore ? this.game.lore.common : ''}
+
 Instructions:
 1. You have been prompted to speak/act by the Game Director.
 2. Respond naturally to the recent events.

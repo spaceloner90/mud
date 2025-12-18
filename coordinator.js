@@ -118,6 +118,9 @@ ${npcProfiles}
 Global Game History:
 ${historyText}
 
+WORLD KNOWLEDGE (Director Eyes Only):
+${this.game.lore ? this.game.lore.common : ''}
+
 ${secretInstructions}
 
 Instructions:
