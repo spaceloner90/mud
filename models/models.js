@@ -1,8 +1,9 @@
 class GameEvent {
-    constructor(type, description, sourceId) {
+    constructor(type, description, sourceId, targetId = null) {
         this.type = type; // 'say', 'enter', 'leave', 'action'
         this.description = description;
         this.sourceId = sourceId;
+        this.targetId = targetId; // Specific addressee (optional)
         this.timestamp = Date.now();
     }
 }

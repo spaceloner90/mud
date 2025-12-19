@@ -68,6 +68,15 @@ class InputHandler {
                         this.game.printImmediate('Syntax: say [message]', 'system-msg');
                         this.game.printImmediate('Speak to other characters in the room.', 'system-msg');
                         break;
+                    case 'sayto':
+                        this.game.printImmediate('Syntax: sayto [target] [message]', 'system-msg');
+                        this.game.printImmediate('Address a specific character directly.', 'system-msg');
+                        break;
+                    case 'emote':
+                    case 'em':
+                        this.game.printImmediate('Syntax: emote [action]', 'system-msg');
+                        this.game.printImmediate('Perform a non-verbal action (e.g., "emote shrugs").', 'system-msg');
+                        break;
                     case 'inventory':
                     case 'inv':
                         this.game.printImmediate('Syntax: inventory', 'system-msg');
@@ -82,7 +91,7 @@ class InputHandler {
                         this.game.printImmediate(`No help available for "${topic}".`, 'error-msg');
                 }
             } else {
-                this.game.printImmediate('COMMANDS: help, look (l), inventory (inv), give, say, n, s, e, w', 'system-msg');
+                this.game.printImmediate('COMMANDS: help, look (l), inventory (inv), give, say, sayto, emote, n, s, e, w', 'system-msg');
                 this.game.printImmediate('Type "help [command]" for more info.', 'system-msg');
             }
             return;
@@ -97,12 +106,36 @@ class InputHandler {
             const speech = parts.slice(1).join(' ');
             if (speech) {
                 this.game.printDialogue('You', speech);
-                // Broadcast speech event with audience context
-                const othersInRoom = this.game.getCharactersInRoom(this.game.currentRoom.id).map(c => c.name).join(', ');
-                const audience = othersInRoom ? ` to ${othersInRoom}` : ' to no one';
-                this.game.broadcastEvent(new GameEvent('say', `Player said"${speech}"${audience}`, 'player'));
+                // Broadcast speech event generic to the room
+                // User requested "Player says to the room" instead of listing names to avoid bias
+                this.game.broadcastEvent(new GameEvent('say', `Player said "${speech}" to the room`, 'player'));
             } else {
                 this.game.printImmediate('What do you want to say?', 'error-msg');
+            }
+            return;
+        }
+
+        if (isCmd(verb, 'sayto')) {
+            // Syntax: sayto [target] [message]
+            // We assume the first word is the target for now, or maybe the first TWO words if 1 word fails?
+            // Actually, let's keep it simple: First word is target. User can use part of name.
+            if (parts.length < 3) {
+                this.game.printImmediate('Syntax: sayto [target] [message]', 'error-msg');
+                return;
+            }
+
+            const targetName = parts[1];
+            const message = parts.slice(2).join(' ');
+            this.game.playerSayTo(targetName, message);
+            return;
+        }
+
+        if (isCmd(verb, 'emote', 'em')) {
+            const action = parts.slice(1).join(' ');
+            if (action) {
+                this.game.playerEmote(action);
+            } else {
+                this.game.printImmediate('Emote what?', 'error-msg');
             }
             return;
         }

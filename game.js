@@ -7,6 +7,9 @@ class Game {
 
         this.inputHandler = new InputHandler(this); // Initialize InputHandler
 
+        this.commandHistory = [];
+        this.historyIndex = -1;
+
         this.setupInput();
         this.startAuth();
     }
@@ -15,15 +18,174 @@ class Game {
         this.input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 const command = this.input.value.trim();
+
+                if (command) {
+                    this.commandHistory.push(command);
+                    this.historyIndex = -1; // Reset index
+                    // Limit history size to 50
+                    if (this.commandHistory.length > 50) this.commandHistory.shift();
+                }
+
                 this.input.value = '';
                 this.inputHandler.handle(command); // Delegate to InputHandler
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (this.commandHistory.length === 0) return;
+
+                if (this.historyIndex === -1) {
+                    this.historyIndex = this.commandHistory.length - 1;
+                } else {
+                    this.historyIndex = Math.max(0, this.historyIndex - 1);
+                }
+                this.input.value = this.commandHistory[this.historyIndex];
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (this.commandHistory.length === 0 || this.historyIndex === -1) return;
+
+                this.historyIndex = Math.min(this.commandHistory.length - 1, this.historyIndex + 1);
+
+                // If we go past the end, clear the input (new line)
+                if (this.historyIndex === this.commandHistory.length - 1) {
+                    this.input.value = this.commandHistory[this.historyIndex];
+                } else if (this.historyIndex >= this.commandHistory.length) {
+                    // Wait, logic check: if index is length-1, we are at the last command.
+                    // If we want to go "back to empty", we need to track that.
+                    // Let's reset if we go past end.
+                }
+
+                // Actually, standard behavior:
+                // Down at bottom = empty.
+                if (this.historyIndex < this.commandHistory.length) {
+                    this.input.value = this.commandHistory[this.historyIndex];
+                }
+
+                // Allow cycling back to empty
+                // If we are at the last item and press down, we should go to empty?
+                // Revised logic:
+                // Index tracks *current history position*. -1 means "new line".
+            } else if (e.key === 'c' && e.ctrlKey) {
+                e.preventDefault();
+                this.input.value = '';
+                this.historyIndex = -1;
+            }
+        });
+
+        // Corrected ArrowDown Logic for cleaner implementation in one go
+        // Re-defining listener for clarity in replacement
+        this.input.removeEventListener('keydown', () => { }); // Can't remove anon fn, but we are replacing the whole block setup.
+        // Actually, I am replacing the whole setupInput method content.
+
+        // Final polished logic for replacement:
+    }
+
+    setupInput() {
+        this.input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const command = this.input.value.trim();
+
+                if (command) {
+                    this.commandHistory.push(command);
+                    this.historyIndex = -1;
+                    if (this.commandHistory.length > 50) this.commandHistory.shift();
+                }
+
+                this.input.value = '';
+                this.inputHandler.handle(command);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (this.commandHistory.length === 0) return;
+
+                if (this.historyIndex === -1) {
+                    this.historyIndex = this.commandHistory.length - 1;
+                } else if (this.historyIndex > 0) {
+                    this.historyIndex--;
+                }
+                this.input.value = this.commandHistory[this.historyIndex];
+
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (this.historyIndex === -1) return;
+
+                if (this.historyIndex < this.commandHistory.length - 1) {
+                    this.historyIndex++;
+                    this.input.value = this.commandHistory[this.historyIndex];
+                } else {
+                    this.historyIndex = -1;
+                    this.input.value = '';
+                }
+            } else if (e.key === 'c' && e.ctrlKey) {
+                e.preventDefault();
+                this.input.value = '';
+                this.historyIndex = -1;
             }
         });
 
         // Keep focus
-        document.addEventListener('click', () => {
+        document.addEventListener('click', (e) => {
+            // Don't steal focus if clicking inside debug panel
+            if (e.target.closest('#debug-panel')) return;
             if (!this.isProcessing) this.input.focus();
         });
+
+        this.setupDebugUI();
+    }
+
+    setupDebugUI() {
+        const decayInput = document.getElementById('decay-input');
+        const depthInput = document.getElementById('depth-input');
+        const decayVal = document.getElementById('decay-val');
+        const depthVal = document.getElementById('depth-val');
+
+        if (decayInput) {
+            decayInput.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                decayVal.textContent = val;
+                if (this.coordinator) {
+                    this.coordinator.conversationDecay = val;
+                    console.log(`[Debug] Set Decay Factor to ${val}`);
+                }
+            });
+        }
+
+        if (depthInput) {
+            depthInput.addEventListener('change', (e) => {
+                const val = parseInt(e.target.value);
+                depthVal.textContent = val;
+                if (this.coordinator) {
+                    this.coordinator.maxConversationDepth = val;
+                    console.log(`[Debug] Set Max Depth to ${val}`);
+                }
+            });
+        }
+
+        const paceInput = document.getElementById('pace-input');
+        const paceVal = document.getElementById('pace-val');
+        if (paceInput) {
+            paceInput.addEventListener('input', (e) => {
+                const val = parseInt(e.target.value);
+                paceVal.textContent = val;
+                if (this.coordinator) {
+                    this.coordinator.conversationPace = val;
+                    console.log(`[Debug] Set Conversation Pace to ${val}ms`);
+                }
+            });
+        }
+
+        // Collapse Toggle
+        const debugHeader = document.getElementById('debug-header');
+        const debugPanel = document.getElementById('debug-panel');
+        const debugToggle = document.getElementById('debug-toggle');
+
+        if (debugHeader && debugPanel) {
+            debugHeader.addEventListener('click', () => {
+                debugPanel.classList.toggle('minimized');
+                if (debugPanel.classList.contains('minimized')) {
+                    debugToggle.textContent = '+';
+                } else {
+                    debugToggle.textContent = '-';
+                }
+            });
+        }
     }
 
     async startAuth() {
@@ -139,7 +301,29 @@ class Game {
         this.printImmediate('[X] Clear Cached Data & Reset', 'menu-item'); // Add Reset Option
     }
 
-    launchScenario(id) {
+    syncDebugSettings() {
+        if (!this.coordinator) return;
+
+        const decayInput = document.getElementById('decay-input');
+        const depthInput = document.getElementById('depth-input');
+        const paceInput = document.getElementById('pace-input');
+
+        if (decayInput) {
+            const val = parseFloat(decayInput.value);
+            this.coordinator.conversationDecay = val;
+        }
+        if (depthInput) {
+            const val = parseInt(depthInput.value);
+            this.coordinator.maxConversationDepth = val;
+        }
+        if (paceInput) {
+            const val = parseInt(paceInput.value);
+            this.coordinator.conversationPace = val;
+        }
+        console.log(`[Game] Synced Debug Settings: Decay=${this.coordinator.conversationDecay}, Depth=${this.coordinator.maxConversationDepth}, Pace=${this.coordinator.conversationPace}`);
+    }
+
+    async launchScenario(id) {
         const scenario = scenarios[id];
         if (!scenario) {
             this.printImmediate('Invalid Scenario ID.', 'error-msg');
@@ -149,11 +333,10 @@ class Game {
         this.output.innerHTML = ''; // Clear screen
         this.state = 'PLAYING';
 
-        this.printImmediate(scenario.introText, 'intro-text');
-        this.printImmediate('<br>-----------------------<br>');
-        this.printImmediate('Type "help" for commands.');
+        await scenario.setup(this);
 
-        scenario.setup(this);
+        // Sync Debug UI values to the new Coordinator
+        this.syncDebugSettings();
     }
 
     printDialogue(speaker, text) {
@@ -168,6 +351,48 @@ class Game {
         p.innerHTML = `<span class="speaker" ${colorStyle}>${speaker}:</span> "${text}"`;
         this.output.appendChild(p);
         this.output.scrollTop = this.output.scrollHeight;
+    }
+
+    playerSayTo(targetName, text) {
+        if (!this.currentRoom) return false;
+
+        const roomChars = this.getCharactersInRoom(this.currentRoom.id);
+        const target = roomChars.find(c => c.name.toLowerCase().includes(targetName.toLowerCase()));
+
+        if (!target) {
+            this.printImmediate(`You don't see "${targetName}" here.`, 'error - msg');
+            return false;
+        }
+
+        // Output to player: "You say to [Target]: [Message]"
+        const p = document.createElement('div');
+        p.classList.add('dialogue');
+        p.innerHTML = `<span class="speaker">You say to <span style="color:${target.color}">${target.name}</span>:</span> "${text}"`;
+        this.output.appendChild(p);
+        this.output.scrollTop = this.output.scrollHeight;
+
+        this.broadcastEvent(new GameEvent('say', `Player said to ${target.name}: "${text}"`, 'player', target.id));
+        return true;
+    }
+
+    playerEmote(text) {
+        if (!this.currentRoom) return;
+
+        // Display to player
+        // User requested "hot magenta", using standard Magenta #FF00FF or HotPink #FF69B4. Let's go with a vibrant magenta.
+        const p = document.createElement('div');
+        p.classList.add('dialogue');
+        // Format: Entire line colored. "You [text]"
+        // User example: "shrugs your shoulders" -> "You shrug your shoulders"
+        // I will implement simple appending for now. 
+        // "You " + text.
+        p.innerHTML = `<span style="color: #FF00FF">You ${text}</span>`;
+        this.output.appendChild(p);
+        this.output.scrollTop = this.output.scrollHeight;
+
+        // Broadcast event
+        // We use type 'action' for emotes/physical actions
+        this.broadcastEvent(new GameEvent('action', `Player ${text}`, 'player'));
     }
 
     async victory() {
@@ -294,6 +519,27 @@ class Game {
         // Broadcast that they spoke (so other NPCs hear it too!)
         if (character) {
             this.broadcastEvent(new GameEvent('say', `${character.name} said: "${text}"`, characterId));
+        }
+    }
+
+    npcEmote(characterId, text) {
+        if (!this.currentRoom) return;
+
+        const character = this.characters[characterId];
+        // Only show if the character is in the same room as the player
+        if (character && character.currentRoomId === this.currentRoom.id) {
+            const p = document.createElement('div');
+            p.classList.add('dialogue');
+            // Entire line colored in character's color
+            // Format: [Name] [action]
+            p.innerHTML = `<span style="color: ${character.color}">${character.name} ${text}</span>`;
+            this.output.appendChild(p);
+            this.output.scrollTop = this.output.scrollHeight;
+        }
+
+        // Broadcast event
+        if (character) {
+            this.broadcastEvent(new GameEvent('action', `${character.name} ${text}`, characterId));
         }
     }
 

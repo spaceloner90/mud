@@ -9,6 +9,12 @@ class AICoordinator {
         // Registry of game secrets that can be revealed by the Director
         this.secrets = secrets;
         this.reactionTimeout = null;
+
+        // Conversation Dynamics
+        this.conversationDecay = 0.6; // Probability drops by turn (0.6 default)
+        this.maxConversationDepth = 5; // Hard limit on chain length
+        this.conversationPace = 2500; // ms to wait between turns (allows multiple lines & prevents throttling)
+        this.currentChainDepth = 0;
     }
 
     // Called by game.js whenever a broadcastEvent happens
@@ -34,18 +40,55 @@ class AICoordinator {
         }
 
         // Decide if we should trigger a reaction (or check for reveals)
+        // Decide if should trigger reaction
         if (event.sourceId === 'player') {
+            // Player spoke/acted: RESET chain
+            this.currentChainDepth = 0;
+
             if (event.type === 'leave') {
-                // Navigation: Wait 4s to ensure player settles in the room
                 console.log('[Director] Navigation detected. Queuing reaction in 4s...');
                 this.reactionTimeout = setTimeout(() => this.directorThink({ allowResponse: true }), 4000);
             } else if (event.type === 'say' || event.type === 'action') {
-                // Action/Speech: Wait 1s (debounced)
                 this.reactionTimeout = setTimeout(() => this.directorThink({ allowResponse: true }), 1000);
             }
         } else if (event.type === 'say') {
-            // NPC spoke: Check for reveals (passive), short delay
-            this.reactionTimeout = setTimeout(() => this.directorThink({ allowResponse: false }), 500);
+            // NPC spoke: Increment chain
+            this.currentChainDepth++;
+
+            // Check Max Depth
+            if (this.currentChainDepth >= this.maxConversationDepth) {
+                console.log(`[Director] Conversation Chain Reached Max Depth (${this.maxConversationDepth}). Stopping.`);
+                return;
+            }
+
+            // Check Probability Decay
+            // Only proceed if there is someone else to respond!
+            const potentialResponders = this.game.getCharactersInRoom(this.game.currentRoom.id)
+                .filter(c => c.id !== event.sourceId && c.id !== 'player');
+
+            if (potentialResponders.length > 0) {
+                // If speaker changed, increment depth (conversation is flowing back and forth)
+                if (event.sourceId !== this.lastChainSpeakerId) {
+                    this.currentChainDepth++;
+                    this.lastChainSpeakerId = event.sourceId;
+                }
+
+                // Depth 1 (response to player) -> P = 0.5^1 = 0.5
+                // Depth 2 -> 0.25, etc.
+                const probability = Math.pow(this.conversationDecay, this.currentChainDepth);
+                const roll = Math.random();
+
+                if (roll < probability) {
+                    console.log(`[Director] Chain Reaction Triggered (Depth ${this.currentChainDepth}, Prob ${probability.toFixed(2)}, Roll ${roll.toFixed(2)}).`);
+                    this.reactionTimeout = setTimeout(() => this.directorThink({ allowResponse: true }), this.conversationPace);
+                } else {
+                    console.log(`[Director] Chain Reaction Ended (Depth ${this.currentChainDepth}, Prob ${probability.toFixed(2)}, Roll ${roll.toFixed(2)}).`);
+                }
+            } else {
+                // No one to talk to
+                this.currentChainDepth = 0;
+                this.lastChainSpeakerId = null;
+            }
         }
     }
 
@@ -53,8 +96,21 @@ class AICoordinator {
         if (this.isThinking) return;
 
         // Find NPCs in the current room
+        // Find NPCs in the current room
         const currentRoomId = this.game.currentRoom.id;
-        const potentialResponders = this.game.getCharactersInRoom(currentRoomId).filter(c => c.id !== 'player');
+        let potentialResponders = this.game.getCharactersInRoom(currentRoomId).filter(c => c.id !== 'player');
+
+        // FILTER: If the last event had a specific target, ONLY that target should respond.
+        const lastEvent = this.history.length > 0 ? this.history[this.history.length - 1] : null;
+        if (lastEvent) {
+            if (lastEvent.targetId) {
+                console.log(`[Director] Targeted event detected for: ${lastEvent.targetId}`);
+                potentialResponders = potentialResponders.filter(c => c.id === lastEvent.targetId);
+            } else if (lastEvent.sourceId !== 'player') {
+                // Prevent self-response (Chain Loop)
+                potentialResponders = potentialResponders.filter(c => c.id !== lastEvent.sourceId);
+            }
+        }
 
         if (potentialResponders.length === 0) return;
 

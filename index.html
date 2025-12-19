@@ -6,24 +6,118 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TERMINAL CONNECTION</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Debug Panel Styles */
+        #debug-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(17, 17, 17, 0.95);
+            border: 1px solid #444;
+            padding: 0;
+            border-radius: 4px;
+            color: #ccc;
+            font-size: 12px;
+            width: 280px;
+            z-index: 1000;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        #debug-header {
+            padding: 8px 12px;
+            background: #222;
+            border-bottom: 1px solid #444;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            color: #fff;
+        }
+
+        #debug-header:hover {
+            background: #2a2a2a;
+        }
+
+        #debug-content {
+            padding: 12px;
+        }
+
+        #debug-panel.minimized {
+            width: auto;
+            border: 1px solid #444;
+        }
+
+        #debug-panel.minimized #debug-content {
+            display: none;
+        }
+
+        #debug-panel.minimized #debug-header {
+            border-bottom: none;
+        }
+
+        .debug-row {
+            margin-bottom: 10px;
+        }
+
+        .debug-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .debug-row label {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .debug-row input {
+            width: 100%;
+            background: #222;
+            border: 1px solid #444;
+            color: #fff;
+        }
+    </style>
 </head>
 
 <body>
     <div id="crt-overlay"></div>
     <div id="screen">
         <div id="output"></div>
-        <div id="input-line">
+        <div id="input-area">
             <span class="prompt">&gt;</span>
-            <input type="text" id="cmd" autofocus autocomplete="off" spellcheck="false">
+            <input type="text" id="cmd" autofocus autocomplete="off">
         </div>
     </div>
-    <div id="loading-indicator" class="hidden">Thinking...</div>
+    <div id="loading-indicator" class="hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Director Debug Panel -->
+    <div id="debug-panel" class="minimized">
+        <div id="debug-header">
+            <span>Director Debug</span>
+            <span id="debug-toggle">+</span>
+        </div>
+        <div id="debug-content">
+            <div class="debug-row">
+                <label>Decay Factor: <span id="decay-val">0.6</span></label>
+                <input type="range" id="decay-input" min="0" max="1" step="0.05" value="0.6">
+            </div>
+            <div class="debug-row">
+                <label>Max Depth: <span id="depth-val">5</span></label>
+                <input type="number" id="depth-input" min="1" max="10" value="5">
+            </div>
+            <div class="debug-row">
+                <label>Pace (ms): <span id="pace-val">2500</span></label>
+                <input type="range" id="pace-input" min="1000" max="10000" step="100" value="2500">
+            </div>
+        </div>
+    </div>
+
     <script src="models/models.js"></script>
-    <script src="scenarios/1/lore.js"></script>
-    <script src="scenarios/1/rooms.js"></script>
-    <script src="scenarios/1/characters.js"></script>
-    <script src="scenarios/1/items.js"></script>
-    <script src="scenarios/1/data.js"></script>
+
     <script src="ai.js"></script>
     <script src="coordinator.js"></script>
     <script src="scenarios.js"></script>

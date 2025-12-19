@@ -52,12 +52,38 @@ class AIAgent {
         const myItems = this.game.getItemsByHolder(this.character.id).map(i => i.name).join(', ');
         const inventoryText = myItems ? `You are holding: ${myItems}` : "You are holding nothing.";
 
+        // Add Room Context
+        const room = this.game.world[this.character.currentRoomId];
+        const roomName = room ? room.name : "Unknown";
+        const roomDesc = room ? room.description : "You are in a void.";
+
+        // Other characters in the room (excluding self)
+        const others = this.game.getCharactersInRoom(this.character.currentRoomId)
+            .filter(c => c.id !== this.character.id)
+            .map(c => `${c.name} (${c.description})`) // Include description for better context? User said "context including... other characters"
+            .join('\n- ');
+
+        const otherCharsText = others ? `Characters here:\n- ${others}` : "You are alone.";
+
+        // Visible Items
+        const visibleItems = this.game.getItemsByHolder(this.character.currentRoomId)
+            .filter(i => !i.isHidden) // visible only
+            .map(i => i.name)
+            .join(', ');
+        const itemsText = visibleItems ? `Items here: ${visibleItems}` : "No items visible.";
+
         return `
 You are playing the role of an NPC in a fantasy text adventure game.
 Your Name: ${this.character.name}
 Your Description: ${this.character.description}
 Secret Motivation: ${this.character.secret || "None"}
-Current Location: ${this.character.currentRoomId}
+
+Current Environment:
+Location: ${roomName}
+Description: ${roomDesc}
+${otherCharsText}
+${itemsText}
+
 ${inventoryText}
 
 Global Game History:
@@ -73,10 +99,12 @@ Instructions:
 4. Output a JSON ARRAY of actions to perform in order.
 5. Allowed Actions:
    - {"action": "say", "content": "..."}
+   - {"action": "emote", "content": "..."} (e.g., "shrugs", "nods at You")
    - {"action": "give", "item": "item name", "target": "recipient name"}
    - {"action": "wait"} (Use if you decide to do nothing)
-6. You can combine actions (e.g., say something then give an item).
+6. You can combine actions (e.g., say something then emote).
 7. Keep responses short and conversational.
+8. When emoting about the player, refer to them as "You".
 
 Response (JSON Array):
 `;
@@ -126,11 +154,23 @@ Response (JSON Array):
     executeAction(actions) {
         if (!actions || !Array.isArray(actions)) return;
 
+        // Filter out 'wait' if there are other actions
+        const hasRealAction = actions.some(a => a.action !== 'wait');
+        if (hasRealAction) {
+            actions = actions.filter(a => a.action !== 'wait');
+        }
+
         actions.forEach(result => {
             if (result.action === 'say') {
                 this.game.npcSay(this.character.id, result.content);
+            } else if (result.action === 'emote') {
+                this.game.npcEmote(this.character.id, result.content);
             } else if (result.action === 'give') {
                 this.game.npcGive(this.character.id, result.item, result.target);
+            } else if (result.action === 'wait') {
+                console.log(`[AI Agent] ${this.character.name} decided to wait.`);
+            } else {
+                console.log(`[AI Agent] ${this.character.name} decided to do nothing (invalid action: ${result.action})`);
             }
         });
     }

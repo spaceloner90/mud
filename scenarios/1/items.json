@@ -1,0 +1,63 @@
+[
+    {
+        "id": "hammer",
+        "name": "Heavy Hammer",
+        "description": "Grum's favorite forging hammer. It feels heavy with purpose.",
+        "startLocation": "ghost"
+    },
+    {
+        "id": "shield",
+        "name": "Iron Shield",
+        "description": "A sturdy shield bearing the village crest. A symbol of protection.",
+        "startLocation": "grum"
+    },
+    {
+        "id": "ticket",
+        "name": "Wagon Ticket",
+        "description": "A stamped parchment granting passage on the next supply wagon.",
+        "startLocation": "innkeeper"
+    },
+    {
+        "id": "locket",
+        "name": "Family Locket",
+        "description": "A silver locket containing a portrait of the King. Proof of identity.",
+        "startLocation": "noble"
+    },
+    {
+        "id": "signet_ring",
+        "name": "Royal Signet Ring",
+        "description": "A heavy gold ring bearing the crest of the King.",
+        "startLocation": "shopkeeper",
+        "isSecret": true
+    },
+    {
+        "id": "duckie",
+        "name": "Rubber Duckie",
+        "description": "A bright yellow rubber duckie. It squeaks if you squeeze it.",
+        "startLocation": "player"
+    },
+    {
+        "id": "bell",
+        "name": "Brass Bell",
+        "description": "The Town Crier's trusty bell. It is polished to a shine.",
+        "startLocation": "crier"
+    },
+    {
+        "id": "tankard",
+        "name": "Empty Tankard",
+        "description": "A wooden tankard stained with ale. It smells faintly of hops.",
+        "startLocation": "tavern"
+    },
+    {
+        "id": "horseshoe",
+        "name": "Rusty Horseshoe",
+        "description": "A discarded piece of iron. Legends say it brings good luck.",
+        "startLocation": "blacksmith"
+    },
+    {
+        "id": "apple",
+        "name": "Red Apple",
+        "description": "A shiny red apple. It looks crisp and delicious.",
+        "startLocation": "store"
+    }
+]

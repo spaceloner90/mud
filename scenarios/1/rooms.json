@@ -1,0 +1,101 @@
+[
+    {
+        "id": "square",
+        "name": "Village Square",
+        "description": "The heart of the village feels unusually tense. Villagers hurry by, casting nervous glances at the sky where dark clouds gather. A dry fountain stands in the center, its stone basin filled with dead leaves. To the [north] is the road out. To the [west] is the Golden Tankard Tavern. To the [east] is the silent Blacksmith. To the [south] the forest road awaits.",
+        "exits": {
+            "north": "road_north",
+            "west": "tavern",
+            "east": "blacksmith",
+            "south": "road_south"
+        }
+    },
+    {
+        "id": "tavern",
+        "name": "The Golden Tankard",
+        "description": "A warm fire tries to fight the gloom, but the shadows in the corners seem to lengthen. The air smells of stale ale and woodsmoke. Outside the window, a sturdy supply wagon is being prepared for departure, but the horses look nervous and skittish. The exit is [east] to the square.",
+        "exits": {
+            "east": "square"
+        }
+    },
+    {
+        "id": "blacksmith",
+        "name": "Blacksmith",
+        "description": "The forge is cold and silent, a stark contrast to its usual roar. Layers of dust have settled on the heavy iron anvils. A half-finished shield lies forgotten on the workbench, waiting for a master's touch that may never come. The way out is [west].",
+        "exits": {
+            "west": "square"
+        }
+    },
+    {
+        "id": "road_north",
+        "name": "Village Road (North)",
+        "description": "The road stretches out towards the distant mountains, winding its way towards the Capital. Freedom lies this way, but the path is blocked by a heavy checkpoint gate. You cannot leave without proper authorization or the Royal Signet Ring. The village square is to the [south]. A general store stands to the [west].",
+        "exits": {
+            "south": "square",
+            "west": "store"
+        }
+    },
+    {
+        "id": "road_south",
+        "name": "Village Road (South)",
+        "description": "The road becomes a dirt path here, rutted by years of wagon wheels. It leads towards the dark, imposing treeline of the forest [south]. The wind howls mournfully through the trees. The village square is [north].",
+        "exits": {
+            "north": "square",
+            "south": "forest_edge"
+        }
+    },
+    {
+        "id": "forest_edge",
+        "name": "Forest Edge",
+        "description": "The trees loom tall and dark here, their branches entangling like skeletal fingers blocking the sky. The air is noticeably cooler and smells of damp earth and decay. A path leads deeper [south] into the dangerous woods, or you can retreat [north] to the safety of the village.",
+        "exits": {
+            "north": "road_south",
+            "south": "forest_path"
+        }
+    },
+    {
+        "id": "forest_path",
+        "name": "Forest Path",
+        "description": "Twisted roots cover the ground, making every step treacherous. You hear strange mutterings and soft weeping coming from the shadows ahead. The path continues [south], or you can turn back [north].",
+        "exits": {
+            "north": "forest_edge",
+            "south": "clearing"
+        }
+    },
+    {
+        "id": "store",
+        "name": "General Store",
+        "description": "Shelves are stocked with supplies, but the atmosphere is heavy with secrets. The scent of dried herbs and old parchment fills the air. The shopkeeper seems busy organizing travel supplies, constantly checking the door. The exit is [east] to the road.",
+        "exits": {
+            "east": "road_north"
+        }
+    },
+    {
+        "id": "clearing",
+        "name": "Forest Clearing",
+        "description": "A small open circle of grass in the deep woods. The air is thick with sadness and a supernatural chill. An ancient stone marker stands here, weathered by centuries of rain. Paths lead [north] back to safety.",
+        "exits": {
+            "north": "forest_path",
+            "west": "cave_entrance"
+        },
+        "hiddenExits": {
+            "east": "grove"
+        }
+    },
+    {
+        "id": "grove",
+        "name": "Ancient Grove",
+        "description": "A place of old magic, untouched by the gloom affecting the rest of the forest. Soft motes of light dance in the air, and the trees here seem to watch you with benevolent eyes. It feels like a sanctuary. Return [west] to the clearing.",
+        "exits": {
+            "west": "clearing"
+        }
+    },
+    {
+        "id": "cave_entrance",
+        "name": "Cave Entrance",
+        "description": "A gaping maw in the rock face, breathing out cold, damp air. Water drips somewhere deep within, echoing endlessly. It looks too dangerous to enter without a light source. You can go back [east].",
+        "exits": {
+            "east": "clearing"
+        }
+    }
+]
