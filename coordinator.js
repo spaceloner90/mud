@@ -377,15 +377,17 @@ PLAYER'S ACCUSATION:
 INSTRUCTIONS:
 1. Compare the Player's Accusation to the Truth.
 2. The Player MUST identify ALL THREE: Killer, Motive, and Method.
-3. If ANY of these are missing or significantly incorrect, REJECT the accusation.
+3. If ANY of these are missing or significantly incorrect, penalize the score heavily.
 4. Be FAIR but STRICT.
-   - Victory requires understanding *why* and *how*. Random guesses should be rejected.
-   - Vague accusations ("He did it") should be rejected.
+   - Victory requires understanding *why* and *how*. Random guesses should be rejected with a low score.
+   - Vague accusations ("He did it") should get a low score.
    - However, allow for natural language variations. They don't need to match the phrasing exactly, just the facts.
-5. If the accusation matches all key facts, grant VICTORY.
-6. Otherwise, declare DEFEAT.
+5. Assign a SCORE from 0 to 100 based on accuracy.
+   - 100: Perfect match (Killer, Motive, Method all precise).
+   - 60-99: Core truth is correct, but minor details (like specific poison name vs generic 'poison') are less precise but acceptable.
+   - < 60: Significant missing facts, wrong conclusions, or too vague.
 
-CRITICAL INSTRUCTION FOR DEFEAT:
+CRITICAL INSTRUCTION FOR DEFEAT (Score < 60):
 - You must NOT reveal which parts were right or wrong.
 - You must NOT say things like "You found a piece of the puzzle" or "You are close".
 - Simply state that the case is not proven, evidence is lacking, or the conclusion is incorrect.
@@ -393,8 +395,8 @@ CRITICAL INSTRUCTION FOR DEFEAT:
 
 RESPONSE FORMAT (JSON):
 {
-    "verdict": "VICTORY" or "DEFEAT",
-    "explanation": "A short message explaining the verdict. Address the player directly. If DEFEAT: Be vague but final. Do not give hints."
+    "score": number (0-100),
+    "explanation": "A short message explaining the verdict. Address the player directly. If score < 80: Be vague but final. Do not give hints."
 }
 `;
 
@@ -402,14 +404,16 @@ RESPONSE FORMAT (JSON):
             const result = await this.callGemini(prompt);
             console.log(`[Director] Verdict: ${JSON.stringify(result)}`);
 
-            if (result && result.verdict) {
-                if (result.verdict === 'VICTORY') {
+            if (result && typeof result.score === 'number') {
+                if (result.score >= 60) {
                     this.game.state = 'VICTORY';
                     this.game.printImmediate('<br>-----------------------<br>');
                     this.game.printImmediate('*** CASE SOLVED ***', 'victory-text');
                     this.game.printImmediate(result.explanation, 'victory-text');
                     this.game.printImmediate('<br>');
                     this.game.printImmediate(this.game.outroText || "Congratulations, Inspector. Justice has been served.", 'victory-text');
+                    this.game.printImmediate(`Solution Score: ${result.score}/100`, 'bold-msg');
+                    this.game.printImmediate(`Total Turns: ${this.game.turnCount}`, 'system-msg');
                     this.game.printImmediate('<br>Press ENTER to return to title...');
                 } else {
                     this.game.state = 'DEFEAT';
@@ -419,6 +423,8 @@ RESPONSE FORMAT (JSON):
                     this.game.printImmediate(result.explanation, 'defeat-text');
                     this.game.printImmediate('<br>');
                     this.game.printImmediate("Your reputation is in tatters. You leave the manor in disgrace.", 'defeat-text');
+                    this.game.printImmediate(`Solution Score: ${result.score}/100`, 'bold-msg');
+                    this.game.printImmediate(`Total Turns: ${this.game.turnCount}`, 'system-msg');
                     this.game.printImmediate('<br>Press ENTER to return to title...');
                 }
             }

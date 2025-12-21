@@ -25,8 +25,8 @@
     {
         "id": "knife",
         "name": "Silver Letter Opener",
-        "description": "A sharp, silver letter opener shaped like a dagger. It is clean and polished. A potential weapon, but it shows no signs of use.",
-        "startLocation": "desk",
+        "description": "A sharp, silver letter opener shaped like a dagger. It is clean and polished.",
+        "startLocation": "library",
         "isSecret": false
     },
     {
@@ -39,7 +39,7 @@
     {
         "id": "poison_bottle",
         "name": "Arsenic Bottle",
-        "description": "A dusty bottle marked 'Arsenic - For Rate Control'. It appears full and the seal is unbroken. Likely a red herring.",
+        "description": "A dusty bottle marked 'Arsenic - For Rate Control'.",
         "startLocation": "kitchen",
         "isSecret": false
     },
@@ -80,7 +80,7 @@
     {
         "id": "black_notebook",
         "name": "Little Black Notebook",
-        "description": "A small, well-worn notebook filled with Jeeves' meticulous handwriting. It logs visitor times and staff infractions. One entry stands out: '10:00 AM - Master Alistair informed me of the termination of my service. The pension fund is dissolved. 50 years of service, erased. May God forgive him, for I cannot.'",
+        "description": "A small, well-worn notebook filled with Jeeves' meticulous handwriting. It logs visitor times and staff infractions. Several entries stand out:\n- 'V and A need to hide themselves better, I'm sure M has noticed.'\n- 'So many overheard arguments with M today... V in bedroom? A in cellar? S in library? PT in conservatory? Who is S anyway?.'\n- 'M is manic about new will, carries it everywhere now.'\n- 'M informed me of the termination of my service. The pension fund is dissolved. 50 years of service, erased. I should have gotten my cut from P'",
         "startLocation": "jeeves",
         "isSecret": true
     },
@@ -90,5 +90,162 @@
         "description": "A heavy leather-bound volume. You find three bookmarks of interest:\n1. **Strychnos Nux-vomica**: Causes rigid muscles, arching of the back, and a fixed grin.\n2. **Arsenicum (Arsenic)**: Induces violent vomiting, convulsions, and severe gastric distress.\n3. **Aconitum Napellus (Wolfsbane)**: Causes tingling, numbness of the mouth, respiratory paralysis, and pronounced dilation of the pupils.",
         "startLocation": "library",
         "isSecret": true
+    },
+    {
+        "id": "umbrella_stand",
+        "name": "Umbrella Stand",
+        "description": "A brass stand filled with dripping black umbrellas.",
+        "startLocation": "foyer",
+        "isSecret": false,
+        "isStatic": true,
+        "staticMessage": "You don't need an umbrella inside."
+    },
+    {
+        "id": "ancestral_portrait",
+        "name": "Portrait of Colonel Blackwood",
+        "description": "An imposing oil painting of the manor's founder. His eyes seem to follow you with disapproval.",
+        "startLocation": "grand_hall",
+        "isSecret": false,
+        "isStatic": true,
+        "staticMessage": "It is firmly mounted to the wall."
+    },
+    {
+        "id": "unfinished_chess",
+        "name": "Chess Set",
+        "description": "An onyx and ivory chess set. Black is in checkmate.",
+        "startLocation": "library",
+        "isSecret": false
+    },
+    {
+        "id": "antique_globe",
+        "name": "Antique Globe",
+        "description": "A dusty globe from the 19th century. The borders are all wrong.",
+        "startLocation": "study",
+        "isSecret": false
+    },
+    {
+        "id": "silver_candelabra",
+        "name": "Silver Candelabra",
+        "description": "A heavy three-armed candlestick. The wax has dripped down the side.",
+        "startLocation": "dining",
+        "isSecret": false
+    },
+    {
+        "id": "copper_kettle",
+        "name": "Copper Kettle",
+        "description": "A large kettle sitting on the cold stove.",
+        "startLocation": "kitchen",
+        "isSecret": false
+    },
+    {
+        "id": "rare_orchid",
+        "name": "Black Dahlia",
+        "description": "A rare, dark flower with velvety petals. It looks almost menacing.",
+        "startLocation": "conservatory",
+        "isSecret": false,
+        "isStatic": true,
+        "staticMessage": "Best not to distrub the delicate roots."
+    },
+    {
+        "id": "velvet_rope",
+        "name": "Velvet Rope",
+        "description": "A red rope barrier, likely used to cordon off sections during larger parties.",
+        "startLocation": "hallway_up",
+        "isSecret": false,
+        "isStatic": true,
+        "staticMessage": "It's just a rope."
+    },
+    {
+        "id": "perfume_bottle",
+        "name": "Crystal Perfume Bottle",
+        "description": "An elegant bottle of lavender scent. It smells cloying and sweet.",
+        "startLocation": "master_bed",
+        "isSecret": false
+    },
+    {
+        "id": "discarded_newspaper",
+        "name": "The London Times",
+        "description": "Yesterday's paper. The headline screams about the rising storm.",
+        "startLocation": "red_guest",
+        "isSecret": false
+    },
+    {
+        "id": "medical_journal",
+        "name": "Medical Journal",
+        "description": "A copy of 'The Lancet'. It has been dog-eared at an article about toxicology.",
+        "startLocation": "blue_guest",
+        "isSecret": false
+    },
+    {
+        "id": "vintage_wine",
+        "name": "Chateau Blackwood 1890",
+        "description": "An incredibly rare vintage. It's covered in decades of dust.",
+        "startLocation": "cellar",
+        "isSecret": false
+    },
+    {
+        "id": "police_whistle",
+        "name": "Police Whistle",
+        "description": "Standard issue Scotland Yard whistle. Hopefully, you won't need to blow it.",
+        "startLocation": "reggie",
+        "isSecret": false
+    },
+    {
+        "id": "lace_handkerchief",
+        "name": "Lace Handkerchief",
+        "description": "A delicate handkerchief embroidered with 'V.B.'. It is damp with tears.",
+        "startLocation": "victoria",
+        "isSecret": false
+    },
+    {
+        "id": "lucky_coin",
+        "name": "Gold Sovereign",
+        "description": "An old coin Arthur flips nervously. He claims it's lucky, though his debts suggest otherwise.",
+        "startLocation": "arthur",
+        "isSecret": false
+    },
+    {
+        "id": "pocket_watch",
+        "name": "Gold Pocket Watch",
+        "description": "A precision timepiece. Thorne checks it constantly.",
+        "startLocation": "thorne",
+        "isSecret": false
+    },
+    {
+        "id": "feather_boa",
+        "name": "Red Feather Boa",
+        "description": "A glamorous, if slightly molting, accessory.",
+        "startLocation": "scarlet",
+        "isSecret": false
+    },
+    {
+        "id": "white_gloves",
+        "name": "White Gloves",
+        "description": "Spare gloves, perfectly starched and pristine.",
+        "startLocation": "jeeves",
+        "isSecret": false
+    },
+    {
+        "id": "polishing_rag",
+        "name": "Polishing Rag",
+        "description": "A simple cloth smelling of beeswax and lemon.",
+        "startLocation": "mary",
+        "isSecret": false
+    },
+    {
+        "id": "tasting_spoon",
+        "name": "Silver Tasting Spoon",
+        "description": "Pierre's personal spoon. He doesn't let anyone else touch it.",
+        "startLocation": "pierre",
+        "isSecret": false
+    },
+    {
+        "id": "grand_hall_clock",
+        "name": "Grandfather Clock",
+        "description": "A towering mahogany clock. Its pendulum swings with a hypnotic, rhythmic tick... tock... tick... tock.",
+        "startLocation": "grand_hall",
+        "isSecret": false,
+        "isStatic": true,
+        "staticMessage": "It is far too heavy to move."
     }
 ]

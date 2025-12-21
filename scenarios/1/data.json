@@ -3,6 +3,7 @@
     "title": "The Missing Signet Ring",
     "description": "A mystery in the village of Oakhaven.",
     "introText": "You are a Royal Courier sent from the Capital to track down Lady Elara, who is suspected of ensuring the disappearance of the Royal Signet Ring.<br>Your pursuit has led you to the sleepy village of Oakhaven, where her trail has gone cold.<br>Find her, and retrieve the Ring at all costs.",
+    "tickMessage": "The village bell tolls in the distance.",
     "secrets": {
         "grove_path": {
             "id": "grove_path",

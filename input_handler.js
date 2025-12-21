@@ -45,14 +45,14 @@ class InputHandler {
     }
 
     handleGameDetails(command) {
-        const parts = command.toLowerCase().split(' ');
-        const verb = parts[0];
+        const parts = command.trim().split(' ');
+        const verb = parts[0].toLowerCase();
 
         // Helper to check for command matching
         const isCmd = (v, ...options) => options.includes(v);
 
         if (isCmd(verb, 'help')) {
-            const topic = parts[1];
+            const topic = parts[1] ? parts[1].toLowerCase() : null;
             if (topic) {
                 switch (topic) {
                     case 'emote':
@@ -102,12 +102,16 @@ class InputHandler {
                         this.game.printImmediate('Submit your final solution. You must identify the Killer, Motive, and Method.', 'system-msg');
                         this.game.printImmediate('Example: solve The Butler did it in the Library with the Candlestick because he was blackmailed.', 'system-msg');
                         break;
+                    case 'time':
+                        this.game.printImmediate('Syntax: time', 'system-msg');
+                        this.game.printImmediate('Displays the current turn count (how many actions you have taken).', 'system-msg');
+                        break;
                     default:
                         this.game.printImmediate(`No help available for "${topic}".`, 'error-msg');
                 }
             } else {
                 // Commands are listed alphabetically, with movement directions at the end.
-                this.game.printImmediate('COMMANDS: emote, get, give, help, inventory (inv), look (l), say, sayto, solve, use, n, s, e, w, u, d', 'system-msg');
+                this.game.printImmediate('COMMANDS: emote, get, give, help, inventory (inv), look (l), say, sayto, solve, time, use, n, s, e, w, u, d', 'system-msg');
                 this.game.printImmediate('Type "help [command]" for more info.', 'system-msg');
             }
             return;
@@ -125,6 +129,7 @@ class InputHandler {
                 // Broadcast speech event generic to the room
                 // User requested "Player says to the room" instead of listing names to avoid bias
                 this.game.broadcastEvent(new GameEvent('say', `Player said "${speech}" to the room`, 'player'));
+                this.game.tick();
             } else {
                 this.game.printImmediate('What do you want to say?', 'error-msg');
             }
@@ -209,6 +214,11 @@ class InputHandler {
             return;
         }
 
+        if (isCmd(verb, 'time')) {
+            this.game.printImmediate(`Turns Passed: ${this.game.turnCount}`, 'system-msg');
+            return;
+        }
+
         if (isCmd(verb, 'n', 'north')) { this.game.move('north'); return; }
         if (isCmd(verb, 's', 'south')) { this.game.move('south'); return; }
         if (isCmd(verb, 'e', 'east')) { this.game.move('east'); return; }
@@ -290,6 +300,7 @@ class InputHandler {
                 itemToGive.holderId = recipient.id;
                 this.game.printImmediate(`You gave the ${itemToGive.name} to ${recipient.name}.`, 'system-msg');
                 this.game.broadcastEvent(new GameEvent('action', `Player gave ${itemToGive.name} to ${recipient.name}.`, 'player'));
+                this.game.tick();
             } else if (bestMatchItem) {
                 this.game.printImmediate("You don't see them here.", 'error-msg');
             } else {

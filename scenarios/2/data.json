@@ -3,6 +3,7 @@
     "title": "The Manor Murder",
     "description": "A classic whodunit in a storm-swept manor.",
     "introText": "The storm howls outside Blackwood Manor, rattling the windowpanes like angry spirits seeking entry.<br>You are a Detective Inspector from Scotland Yard, summoned by the untimely death of Lord Alistair Blackwood.<br>The bridge has washed out, trapping everyone inside.<br>Seven suspects. One body.<br>You must find the killer before they strike again.",
+    "tickMessage": "You hear the clock strike from the great hall as the long night advances.",
     "secrets": {
         "scarlet_confession": {
             "id": "scarlet_confession",

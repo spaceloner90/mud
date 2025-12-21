@@ -64,6 +64,7 @@ async function loadScenarioData(game, id) {
         // If data.solution exists (narrative or object), store it. Otherwise undefined.
         game.solution = data.solution;
         game.outroText = data.outroText;
+        game.tickMessage = data.tickMessage;
 
         return data;
     } catch (err) {

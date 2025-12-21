@@ -9,6 +9,7 @@ class Game {
 
         this.commandHistory = [];
         this.historyIndex = -1;
+        this.turnCount = 0; // Track player turns
 
         this.scenarios = scenarios; // Assign global scenarios to instance for access by subsystems
 
@@ -327,6 +328,7 @@ class Game {
 
     async launchScenario(id) {
         const scenario = scenarios[id];
+        this.currentScenario = scenario; // Assign to instance for access by tick()
         if (!scenario) {
             this.printImmediate('Invalid Scenario ID.', 'error-msg');
             return;
@@ -374,6 +376,7 @@ class Game {
         this.output.scrollTop = this.output.scrollHeight;
 
         this.broadcastEvent(new GameEvent('say', `Player said to ${target.name}: "${text}"`, 'player', target.id));
+        this.tick();
         return true;
     }
 
@@ -395,6 +398,7 @@ class Game {
         // Broadcast event
         // We use type 'action' for emotes/physical actions
         this.broadcastEvent(new GameEvent('action', `Player ${text}`, 'player'));
+        this.tick();
     }
 
     async victory() {
@@ -407,6 +411,7 @@ class Game {
         this.printImmediate('You have retrieved the Signet Ring.', 'victory-text');
         this.printImmediate('The Kingdom is safe once more.', 'victory-text');
         this.printImmediate('<br>');
+        this.printImmediate(`Total Turns: ${this.turnCount}`, 'system-msg');
         this.printImmediate('Press ENTER to return to Main Menu...', 'system-msg');
     }
 
@@ -492,6 +497,7 @@ class Game {
             // Broadcast enter event to new room
             this.broadcastEvent(new GameEvent('enter', `Player arrived from ${prevRoomName}.`, 'player'));
 
+            this.tick();
             this.look();
         } else {
             this.printImmediate("You can't go that way.", 'error-msg');
@@ -571,6 +577,7 @@ class Game {
         item.holderId = 'player';
         this.printImmediate(`You picked up the ${item.name}.`, 'system-msg');
         this.broadcastEvent(new GameEvent('action', `Player picked up ${item.name}.`, 'player'));
+        this.tick();
     }
 
     use(itemName) {
@@ -618,6 +625,7 @@ class Game {
 
             // Broadcast Event
             this.broadcastEvent(new GameEvent('action', `Player used ${item.name}.`, 'player'));
+            this.tick();
             return;
         }
 
@@ -639,7 +647,7 @@ class Game {
 
         // Verify Recipient
         let recipient = null;
-        if (targetName.toLowerCase() === 'player' || targetName.toLowerCase() === 'me' || targetName.toLowerCase().includes('player')) {
+        if (targetName.toLowerCase() === 'player' || targetName.toLowerCase() === 'me' || targetName.toLowerCase() === 'you' || targetName.toLowerCase().includes('player')) {
             // Check if player is in same room
             if (this.currentRoom.id === npc.currentRoomId) {
                 recipient = { id: 'player', name: 'You' };
@@ -712,6 +720,14 @@ class Game {
             this.printImmediate(`You have revealed: ${item.name} ${locationName}!`, 'success-msg');
             this.broadcastEvent(new GameEvent('action', `Something was revealed in the ${locationName}.`, 'director'));
             // Re-render if in presence (complicated check, just assume director calls it appropriately)
+        }
+    }
+
+    tick() {
+        this.turnCount++;
+        if (this.turnCount % 30 === 0) {
+            const msg = this.tickMessage || "You feel the passage of time.";
+            this.printImmediate(msg, 'system-msg');
         }
     }
 }
