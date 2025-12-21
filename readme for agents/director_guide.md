@@ -8,15 +8,20 @@ The **AICoordinator** (Director) is the brain of the game's reactive storytellin
 - **State Control**: Can trigger "reveals" (unlocking exits/items) based on what NPCs say.
 
 ## 2. Secrets Registry
-Secrets are defined in `coordinator.js` in `this.secrets`. They serve as the "Quest Logic" for the AI.
+Secrets are defined in each scenario's `data.json` file. They serve as the "Quest Logic" for the AI.
 
-### Structure
+### Structure (`models.js` & `data.json`)
 ```javascript
-'secret_id': {
-    id: 'secret_id',
-    description: 'Natural language description of the fact (e.g., "The key is under the mat").',
-    resolved: false, // Automatically set to true after reveal
-    revealFunc: () => { ... } // Function to execute the game state change
+{
+    "secret_id": {
+        "id": "secret_id",
+        "description": "Natural language description (e.g., 'The safe in the study is locked').",
+        "resolved": false, // Handled automatically by Secret class
+        "onReveal": {
+            "type": "revealItem", // or 'revealExit'
+            "itemId": "journal"   // or 'roomId' & 'dir'
+        }
+    }
 }
 ```
 
@@ -33,7 +38,7 @@ Unlike traditional MUDs that use hardcoded keyword matching (e.g., `if (text.inc
       "reveals": ["grove_path"]
     }
     ```
-4.  **Result**: The game executes `revealFunc` for `grove_path`, unlocking the East exit.
+4.  **Result**: The Coordinator calls `secret.reveal(game)`, which acts on the `onReveal` data (e.g. unlocking the East exit).
 
 ## 4. Prompt Logic
 The Director prompt is constructed dynamically:
@@ -46,6 +51,7 @@ The Director prompt is constructed dynamically:
 
 ## 5. Adding New Secrets
 To add a new puzzle solution:
-1.  Add the secret to `coordinator.js` secrets registry.
-2.  Give the corresponding Character (in `characters.js`) the private knowledge in their `secret` field so they *know* it.
-3.  The Director will automatically detect when they generally *say* it.
+1.  Add the secret to `scenarios/<id>/data.json` under `secrets`.
+2.  Define the `onReveal` effect (`revealItem` or `revealExit`).
+3.  Give the corresponding Character (in `characters.json`) the private knowledge in their `secret` field so they *know* it.
+4.  The Director will automatically detect when they generally *say* it.

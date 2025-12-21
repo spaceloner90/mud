@@ -1,0 +1,108 @@
+[
+    {
+        "id": "foyer",
+        "name": "Entrance Hall",
+        "description": "You stand just inside the heavy oak doors of Blackwood Manor, shielded from the storm. Rain lashes against the glass above the door. A long red carpet leads [north] into the heart of the house. You can leave [south] to the driveway, but the bridge is washed out.",
+        "exits": {
+            "north": "grand_hall"
+        }
+    },
+    {
+        "id": "grand_hall",
+        "name": "Grand Hall",
+        "description": "The central nexus of the manor. The black and white marble floor stretches out beneath the massive crystal chandelier. Wide stairs ascend [up] to the upper gallery. To the [west] lies the Library. To the [east] is the Dining Room. To the [south] is the entrance hall.",
+        "exits": {
+            "up": "hallway_up",
+            "west": "library",
+            "east": "dining",
+            "south": "foyer"
+        }
+    },
+    {
+        "id": "library",
+        "name": "The Library",
+        "description": "Rows of ancient, leather-bound books line the walls from floor to ceiling, smelling of dust and decaying paper. A large fireplace dominates the far wall, the embers dying out. In the center of the room, a heavy mahogany desk is strewn with papers. The atmosphere is suffocatingly heavy. To the [north] is a small door leading to the Study. To the [east] is the Grand Hall.",
+        "exits": {
+            "north": "study",
+            "east": "grand_hall"
+        }
+    },
+    {
+        "id": "study",
+        "name": "Lord Blackwood's Study",
+        "description": "A private sanctuary, cluttered with artifacts from Lord Blackwood's travels. A large oil painting of the Lord glares down from the wall, its eyes seeming to follow you. A heavy iron safe sits in the corner, its door slightly ajar. The only exit is back [south] to the Library.",
+        "exits": {
+            "south": "library"
+        }
+    },
+    {
+        "id": "dining",
+        "name": "Dining Room",
+        "description": "A long table set for a feast that never happened. Silverware gleams in the dim light, and untouched wine glasses sit at each place setting. The room is cold, the drapes drawn tight against the storm. To the [north] is the Kitchen. To the [south] lies the Conservatory. To the [west] you return to the Grand Hall.",
+        "exits": {
+            "north": "kitchen",
+            "south": "conservatory",
+            "west": "grand_hall"
+        }
+    },
+    {
+        "id": "kitchen",
+        "name": "The Kitchens",
+        "description": "The heart of the house, usually bustling, is now eerily quiet. Copper pots hang from the ceiling, casting long, strange shadows. A half-chopped onion sits on a cutting board, as if the cook left in a hurry. The smell of roasted game is beginning to turn. To the [south] is the Dining Room. A narrow servant's stair leads [down] to the Cellar.",
+        "exits": {
+            "south": "dining",
+            "down": "cellar"
+        }
+    },
+    {
+        "id": "conservatory",
+        "name": "The Conservatory",
+        "description": "A glass-walled room filled with exotic, fleshy plants that seem to reach out for you. The storm lightning flashes brilliantly through the glass, illuminating the wet leaves in stark, strobe-like bursts. The humid air smells of wet earth and something sickly sweet. To the [north] is the Dining Room.",
+        "exits": {
+            "north": "dining"
+        }
+    },
+    {
+        "id": "hallway_up",
+        "name": "Upper Gallery",
+        "description": "A railed walkway overlooking the Grand Hall below. Portraits of Blackwood ancestors line the walls, each looking more miserable than the last. Doors lead to the bedrooms: [west] to the Master Bedroom, [north] to the Red Guest Room, and [east] to the Blue Guest Room. You can go [down] to the Grand Hall.",
+        "exits": {
+            "down": "grand_hall",
+            "west": "master_bed",
+            "north": "red_guest",
+            "east": "blue_guest"
+        }
+    },
+    {
+        "id": "master_bed",
+        "name": "Master Bedroom",
+        "description": "Opulence decaying into neglect. The four-poster bed is draped in heavy velvet curtains. A vanity table is cluttered with expensive perfumes and an overturned jewelry box. The room smells faintly of lavender and panic. Return [east] to the Gallery.",
+        "exits": {
+            "east": "hallway_up"
+        }
+    },
+    {
+        "id": "red_guest",
+        "name": "Red Guest Room",
+        "description": "Decorated entirely in shades of crimson. It looks less like a bedroom and more like an open wound. The bed is unmade, and a suitcase lies open on the floor, clothes hastily thrown about. Whoever stayed here was planning to leave in a hurry. Return [south] to the Gallery.",
+        "exits": {
+            "south": "hallway_up"
+        }
+    },
+    {
+        "id": "blue_guest",
+        "name": "Blue Guest Room",
+        "description": "cool and detached, with pale blue wallpaper peeling slightly at the corners. A single window looks out over the dark moors. The room is tidy, almost surgically so, with everything in its specific place. Return [west] to the Gallery.",
+        "exits": {
+            "west": "hallway_up"
+        }
+    },
+    {
+        "id": "cellar",
+        "name": "Wine Cellar",
+        "description": "Dark, damp, and smelling of vinegar. Racks of dusty wine bottles stretch into the gloom. The stone floor is uneven. In the corner, a small cot has been set up, as if someone has been sleeping down here. The stairs lead [up] to the Kitchen.",
+        "exits": {
+            "up": "kitchen"
+        }
+    }
+]

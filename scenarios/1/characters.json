@@ -35,7 +35,7 @@
         "description": "A wizened old man with thick spectacles that magnify his worried eyes. He stands hunched behind the counter, staring at the floorboards, seemingly lost in thought. He occasionally glances at the entrance with a look of apprehension, his hands wringing together nervously.",
         "roomId": "store",
         "color": "#DAA520",
-        "secret": "You are a shopkeeper first. Greet customers normally. You have TWO secrets. 1. (Lesser Secret) You know Lady Elara ran into the woods. Reveal this ONLY if asked about her or the woods. 2. (Deep Secret) You are hiding the Royal Signet Ring under your counter (Elara gave it to you). Reveal this ONLY if implicitly trusted or forced. Do NOT volunteer Elara's location immediately."
+        "secret": "You are a shopkeeper first, so greet customers normally. However, you are hiding two things. First, you know Lady Elara ran into the woods, but you will only reveal this if asked about her directly or about the woods. Second, and most importantly, you are hiding the Royal Signet Ring under your counter because Elara gave it to you for safekeeping. You will only reveal the ring if you are implicitly trusted or forced. Do not volunteer Elara's location immediately."
     },
     {
         "id": "noble",

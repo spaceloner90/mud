@@ -1,0 +1,58 @@
+{
+    "id": 2,
+    "title": "The Manor Murder",
+    "description": "A classic whodunit in a storm-swept manor.",
+    "introText": "The storm howls outside Blackwood Manor, rattling the windowpanes like angry spirits seeking entry.<br>You are a Detective Inspector from Scotland Yard, summoned by the untimely death of Lord Alistair Blackwood.<br>The bridge has washed out, trapping everyone inside.<br>Seven suspects. One body.<br>You must find the killer before they strike again.",
+    "secrets": {
+        "scarlet_confession": {
+            "id": "scarlet_confession",
+            "description": "someone informs the player that the will or some other document was burned in the fireplace",
+            "resolved": false,
+            "onReveal": {
+                "type": "revealItem",
+                "itemId": "burnt_will"
+            }
+        },
+        "jeeves_secret_book": {
+            "id": "jeeves_secret_book",
+            "description": "Someone mentions Jeeves' little black book.",
+            "resolved": false,
+            "onReveal": {
+                "type": "revealItem",
+                "itemId": "black_notebook"
+            }
+        },
+        "victoria_reveals_book": {
+            "id": "victoria_reveals_book",
+            "description": "Victoria mentions the botany book in the library.",
+            "resolved": false,
+            "onReveal": {
+                "type": "revealItem",
+                "itemId": "botany_book"
+            }
+        },
+        "mary_has_key": {
+            "id": "mary_has_key",
+            "description": "Mary admits she found the key or someone establishes that Mary has the key.",
+            "resolved": false,
+            "onReveal": {
+                "type": "revealItem",
+                "itemId": "safe_key"
+            }
+        }
+    },
+    "triggers": [
+        {
+            "id": "open_safe",
+            "item": "safe_key",
+            "location": "study",
+            "condition": "true",
+            "effect": {
+                "type": "revealItem",
+                "itemId": "journal"
+            },
+            "message": "You insert the heavy brass key into the safe. It turns with a satisfying click. The heavy iron door swings open, revealing a black leather journal inside."
+        }
+    ],
+    "solution": "The Killer is Dr. Percival Thorne. His Motive was financial ruin; his 'Providence Medical Trust' was bankrupt, and he killed Lord Alistair to inherit the fortune and save it (having been named heir that very morning). The Method was Aconite (Wolfsbane) poisoning, which he extracted from the Conservatory. He tried to frame Arthur by claiming it was an Opium overdose, but the flaw in his lie was the body's 'dilated pupils', which is a symptom of Aconite, whereas Opium causes constriction."
+}

@@ -90,7 +90,8 @@ Global Game History:
 ${eventsText}
 
 WORLD LORE:
-${this.game.lore ? this.game.lore.common : ''}
+WORLD LORE:
+${this.getLoreContext()}
 
 Instructions:
 1. You have been prompted to speak/act by the Game Director.
@@ -173,5 +174,19 @@ Response (JSON Array):
                 console.log(`[AI Agent] ${this.character.name} decided to do nothing (invalid action: ${result.action})`);
             }
         });
+    }
+
+    getLoreContext() {
+        if (!this.character.knowledge || !this.game.lore) return "No specific lore known.";
+
+        const knownLore = this.character.knowledge.map(key => {
+            if (this.game.lore[key]) {
+                return `[KNOWLEDGE - ${key}]: ${this.game.lore[key]}`;
+            }
+            return null;
+        }).filter(k => k !== null);
+
+        if (knownLore.length === 0) return "No specific lore known.";
+        return knownLore.join('\\n');
     }
 }

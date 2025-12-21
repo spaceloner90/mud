@@ -1,0 +1,94 @@
+[
+    {
+        "id": "corpse",
+        "name": "Body of Lord Blackwood",
+        "description": "Lord Blackwood lies slumped in his leather armchair, looking like he fell asleep mid-sentence. His skin is clammy and pale, and his lips have a distinct bluish tint, suggesting respiratory failure. His eyes are staring blankly, the pupils dangerously dilated. A faint, acrid smell—bitter, not sweet—lingers on his breath.",
+        "startLocation": "library",
+        "isSecret": false,
+        "isStatic": true,
+        "staticMessage": "You shouldn't tamper with the crime scene. The positioning of the body is crucial evidence."
+    },
+    {
+        "id": "safe_key",
+        "name": "Brass Key",
+        "description": "A heavy brass key with the Blackwood crest. Mary was holding onto it.",
+        "startLocation": "mary",
+        "isSecret": true
+    },
+    {
+        "id": "journal",
+        "name": "Black Leather Journal",
+        "description": "Lord Blackwood's private journal. The entries are erratic and cruel. The final entry, dated today, reads: 'Victoria... I know about her little dalliances. I shall rewrite the will. Neither of them will get a penny. Better to fund the public good than that harpy and ingrate. But the Blackwood name...'",
+        "startLocation": "study",
+        "isSecret": true
+    },
+    {
+        "id": "knife",
+        "name": "Silver Letter Opener",
+        "description": "A sharp, silver letter opener shaped like a dagger. It is clean and polished. A potential weapon, but it shows no signs of use.",
+        "startLocation": "desk",
+        "isSecret": false
+    },
+    {
+        "id": "will_fragment",
+        "name": "Torn Will Fragment",
+        "description": "A scrap of legal paper torn from a larger document. It reads: '...to my beloved brother Arthur, I leave nothing but my contempt and the forgiveness of his debts, provided he never sets foot...' The rest is missing.",
+        "startLocation": "library",
+        "isSecret": false
+    },
+    {
+        "id": "poison_bottle",
+        "name": "Arsenic Bottle",
+        "description": "A dusty bottle marked 'Arsenic - For Rate Control'. It appears full and the seal is unbroken. Likely a red herring.",
+        "startLocation": "kitchen",
+        "isSecret": false
+    },
+    {
+        "id": "scarlet_letter",
+        "name": "Crumpled Letter",
+        "description": "A letter found in the wastebasket. 'Dearest Alistair, the child is yours. You cannot ignore us forever. I am coming to Blackwood Manor to demand what is owed. - S'",
+        "startLocation": "red_guest",
+        "isSecret": true
+    },
+    {
+        "id": "broken_glass",
+        "name": "Broken Wine Glass",
+        "description": "Shards of dark green glass from a shattered wine bottle are scattered in the corner. It looks like a crate was shoved violently. The wine has soaked into the stone floor, staining it like blood.",
+        "startLocation": "cellar",
+        "isSecret": false,
+        "isStatic": true,
+        "staticMessage": "You shouldn't touch the glass with bare hands."
+    },
+    {
+        "id": "burnt_will",
+        "name": "Burnt Will Ashes",
+        "description": "A pile of ash in the fireplace. It is beyond repair and not recoverable, but you can see the faint, charred header of a legal document.",
+        "startLocation": "library",
+        "isSecret": true,
+        "isStatic": true,
+        "staticMessage": "It would crumble to dust at your touch. The document is destroyed."
+    },
+    {
+        "id": "safe",
+        "name": "Heavy Iron Safe",
+        "description": "A heavy iron safe sits in the corner. It looks impenetrable without the key. It is currently locked.",
+        "startLocation": "study",
+        "isSecret": false,
+        "isStatic": true,
+        "staticMessage": "It is far too heavy to move."
+    },
+    {
+        "id": "black_notebook",
+        "name": "Little Black Notebook",
+        "description": "A small, well-worn notebook filled with Jeeves' meticulous handwriting. It logs visitor times and staff infractions. One entry stands out: '10:00 AM - Master Alistair informed me of the termination of my service. The pension fund is dissolved. 50 years of service, erased. May God forgive him, for I cannot.'",
+        "startLocation": "jeeves",
+        "isSecret": true
+    },
+    {
+        "id": "botany_book",
+        "name": "Botany of British Flora",
+        "description": "A heavy leather-bound volume. You find three bookmarks of interest:\n1. **Strychnos Nux-vomica**: Causes rigid muscles, arching of the back, and a fixed grin.\n2. **Arsenicum (Arsenic)**: Induces violent vomiting, convulsions, and severe gastric distress.\n3. **Aconitum Napellus (Wolfsbane)**: Causes tingling, numbness of the mouth, respiratory paralysis, and pronounced dilation of the pupils.",
+        "startLocation": "library",
+        "isSecret": true
+    }
+]

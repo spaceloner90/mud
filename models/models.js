@@ -26,6 +26,7 @@ class Character {
         this.currentRoomId = currentRoomId;
         this.color = color || '#FFFFFF'; // Default to white if missing
         this.secret = secret; // Hidden from player, known to AI
+        this.knowledge = []; // List of lore keys this character knows
         this.memory = []; // Short-term memory of events
     }
 
@@ -35,7 +36,7 @@ class Character {
         if (this.memory.length > 50) {
             this.memory.shift();
         }
-        console.log(`%c[NPC ${this.name}] Observed:`, `color: ${this.color}; font-weight: bold;`, event.description);
+        // console.log(`%c[NPC ${this.name}] Observed:`, `color: ${this.color}; font-weight: bold;`, event.description);
 
         // Notify AI Agent if one is attached
         if (this.aiAgent) {
@@ -45,11 +46,36 @@ class Character {
 }
 
 class Item {
-    constructor(id, name, description, holderId = null, isHidden = false) {
+    constructor(id, name, description, holderId = null, isHidden = false, isStatic = false, staticMessage = '') {
         this.id = id;
         this.name = name;
         this.description = description;
         this.holderId = holderId; // 'player', 'room_id', or 'character_id'
         this.isHidden = isHidden;
+        this.isStatic = isStatic; // e.g. furniture, bodies
+        this.staticMessage = staticMessage;
+    }
+}
+
+class Secret {
+    constructor(id, description, resolved = false, onReveal = null) {
+        this.id = id;
+        this.description = description;
+        this.resolved = resolved;
+        this.onReveal = onReveal; // { type: 'revealItem'|'revealExit', ... }
+    }
+
+    reveal(game) {
+        if (this.resolved) return;
+        this.resolved = true;
+
+        if (this.onReveal) {
+            const effect = this.onReveal;
+            if (effect.type === 'revealItem') {
+                game.revealItem(effect.itemId);
+            } else if (effect.type === 'revealExit') {
+                game.revealExit(effect.roomId, effect.dir);
+            }
+        }
     }
 }

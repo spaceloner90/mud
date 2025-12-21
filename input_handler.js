@@ -55,9 +55,25 @@ class InputHandler {
             const topic = parts[1];
             if (topic) {
                 switch (topic) {
+                    case 'emote':
+                    case 'em':
+                        this.game.printImmediate('Syntax: emote [action]', 'system-msg');
+                        this.game.printImmediate('Perform a non-verbal action (e.g., "emote shrugs").', 'system-msg');
+                        break;
+                    case 'get':
+                    case 'take':
+                    case 'grab':
+                        this.game.printImmediate('Syntax: get [item]', 'system-msg');
+                        this.game.printImmediate('Pick up an item from the room.', 'system-msg');
+                        break;
                     case 'give':
                         this.game.printImmediate('Syntax: give [item] [character]', 'system-msg');
                         this.game.printImmediate('Transfer an item from your inventory to another character.', 'system-msg');
+                        break;
+                    case 'inventory':
+                    case 'inv':
+                        this.game.printImmediate('Syntax: inventory', 'system-msg');
+                        this.game.printImmediate('Lists items you are currently holding.', 'system-msg');
                         break;
                     case 'look':
                     case 'l':
@@ -72,26 +88,26 @@ class InputHandler {
                         this.game.printImmediate('Syntax: sayto [target] [message]', 'system-msg');
                         this.game.printImmediate('Address a specific character directly.', 'system-msg');
                         break;
-                    case 'emote':
-                    case 'em':
-                        this.game.printImmediate('Syntax: emote [action]', 'system-msg');
-                        this.game.printImmediate('Perform a non-verbal action (e.g., "emote shrugs").', 'system-msg');
-                        break;
-                    case 'inventory':
-                    case 'inv':
-                        this.game.printImmediate('Syntax: inventory', 'system-msg');
-                        this.game.printImmediate('Lists items you are currently holding.', 'system-msg');
+                    case 'use':
+                        this.game.printImmediate('Syntax: use [item]', 'system-msg');
+                        this.game.printImmediate('Use an item in your inventory or in the room to trigger an effect.', 'system-msg');
                         break;
                     case 'move':
-                    case 'n': case 's': case 'e': case 'w':
-                        this.game.printImmediate('Syntax: n, s, e, w', 'system-msg');
-                        this.game.printImmediate('Move in the specified compass direction.', 'system-msg');
+                    case 'n': case 's': case 'e': case 'w': case 'u': case 'd':
+                        this.game.printImmediate('Syntax: n, s, e, w, u, d', 'system-msg');
+                        this.game.printImmediate('Move in the specified compass direction or up/down.', 'system-msg');
+                        break;
+                    case 'solve':
+                        this.game.printImmediate('Syntax: solve [accusation]', 'system-msg');
+                        this.game.printImmediate('Submit your final solution. You must identify the Killer, Motive, and Method.', 'system-msg');
+                        this.game.printImmediate('Example: solve The Butler did it in the Library with the Candlestick because he was blackmailed.', 'system-msg');
                         break;
                     default:
                         this.game.printImmediate(`No help available for "${topic}".`, 'error-msg');
                 }
             } else {
-                this.game.printImmediate('COMMANDS: help, look (l), inventory (inv), give, say, sayto, emote, n, s, e, w', 'system-msg');
+                // Commands are listed alphabetically, with movement directions at the end.
+                this.game.printImmediate('COMMANDS: emote, get, give, help, inventory (inv), look (l), say, sayto, solve, use, n, s, e, w, u, d', 'system-msg');
                 this.game.printImmediate('Type "help [command]" for more info.', 'system-msg');
             }
             return;
@@ -140,10 +156,65 @@ class InputHandler {
             return;
         }
 
+        if (isCmd(verb, 'get', 'take', 'grab')) {
+            const itemName = parts.slice(1).join(' ');
+            if (itemName) {
+                this.game.get(itemName);
+            } else {
+                this.game.printImmediate('Get what?', 'error-msg');
+            }
+            return;
+        }
+
+        if (isCmd(verb, 'use')) {
+            const itemName = parts.slice(1).join(' ');
+            if (itemName) {
+                this.game.use(itemName);
+            } else {
+                this.game.printImmediate('Use what?', 'error-msg');
+            }
+            return;
+        }
+
+        if (isCmd(verb, 'solve')) {
+            if (this.game.state === 'VICTORY' || this.game.state === 'DEFEAT') {
+                this.game.printImmediate("The case is already closed.", 'system-msg');
+                return;
+            }
+
+            // check if there is a solution to solve
+            if (!this.game.solution) {
+                this.game.printImmediate("There is no mystery to 'solve' in this scenario. You must achieve victory through other means.", 'system-msg');
+                return;
+            }
+
+            const solutionText = parts.slice(1).join(' ');
+            if (!solutionText) {
+                this.game.printImmediate('Usage: solve [accusation]', 'error-msg');
+                this.game.printImmediate('Type "help solve" for details on what to include.', 'system-msg');
+                return;
+            }
+
+            const confirmed = window.confirm(`Are you sure you want to submit this solution?\n\n"${solutionText}"\n\nYou only get one chance.`);
+            if (confirmed) {
+                this.game.printImmediate(`You submit your findings: "${solutionText}"`, 'system-msg');
+                if (this.game.coordinator) {
+                    this.game.coordinator.evaluateSolution(solutionText);
+                } else {
+                    this.game.printImmediate('The Director is unavailable to judge your solution.', 'error-msg');
+                }
+            } else {
+                this.game.printImmediate('Solution submission cancelled.', 'system-msg');
+            }
+            return;
+        }
+
         if (isCmd(verb, 'n', 'north')) { this.game.move('north'); return; }
         if (isCmd(verb, 's', 'south')) { this.game.move('south'); return; }
         if (isCmd(verb, 'e', 'east')) { this.game.move('east'); return; }
         if (isCmd(verb, 'w', 'west')) { this.game.move('west'); return; }
+        if (isCmd(verb, 'u', 'up')) { this.game.move('up'); return; }
+        if (isCmd(verb, 'd', 'down')) { this.game.move('down'); return; }
 
         if (isCmd(verb, 'debug')) {
             const targetName = parts.slice(1).join(' ').toLowerCase();

@@ -10,6 +10,8 @@ class Game {
         this.commandHistory = [];
         this.historyIndex = -1;
 
+        this.scenarios = scenarios; // Assign global scenarios to instance for access by subsystems
+
         this.setupInput();
         this.startAuth();
     }
@@ -496,9 +498,14 @@ class Game {
         }
     }
 
-    broadcastEvent(event) {
-        // Find all characters in the current room
-        const chars = this.getCharactersInRoom(this.currentRoom.id);
+    broadcastEvent(event, targetRoomId = null) {
+        // If no target room specified, default to player's current room
+        const roomId = targetRoomId || (this.currentRoom ? this.currentRoom.id : null);
+
+        if (!roomId) return;
+
+        // Find all characters in the target room
+        const chars = this.getCharactersInRoom(roomId);
         chars.forEach(c => c.observe(event));
 
         // Notify Global Coordinator
@@ -511,15 +518,15 @@ class Game {
         if (!this.currentRoom) return;
 
         const character = this.characters[characterId];
-        // Only show if the character is in the same room as the player
-        if (character && character.currentRoomId === this.currentRoom.id) {
+        if (!character) return;
+
+        // Only print to UI if player is in the same room
+        if (character.currentRoomId === this.currentRoom.id) {
             this.printDialogue(character.name, text);
         }
 
-        // Broadcast that they spoke (so other NPCs hear it too!)
-        if (character) {
-            this.broadcastEvent(new GameEvent('say', `${character.name} said: "${text}"`, characterId));
-        }
+        // Broadcast event to the CHARACTER'S room, not necessarily the player's
+        this.broadcastEvent(new GameEvent('say', `${character.name} said: "${text}"`, characterId), character.currentRoomId);
     }
 
     npcEmote(characterId, text) {
@@ -541,6 +548,80 @@ class Game {
         if (character) {
             this.broadcastEvent(new GameEvent('action', `${character.name} ${text}`, characterId));
         }
+    }
+
+    // --- Item Interaction ---
+
+    get(itemName) {
+        const roomItems = this.getItemsByHolder(this.currentRoom.id);
+        const item = roomItems.find(i => i.name.toLowerCase().includes(itemName.toLowerCase()) && !i.isHidden);
+
+        if (!item) {
+            this.printImmediate("You don't see that here.", 'error-msg');
+            return;
+        }
+
+        if (item.isStatic) {
+            const msg = item.staticMessage || "You can't pick that up.";
+            this.printImmediate(msg, 'system-msg');
+            return;
+        }
+
+        // Pick it up
+        item.holderId = 'player';
+        this.printImmediate(`You picked up the ${item.name}.`, 'system-msg');
+        this.broadcastEvent(new GameEvent('action', `Player picked up ${item.name}.`, 'player'));
+    }
+
+    use(itemName) {
+        // 1. Find Item (Inventory OR Room)
+        const playerItems = this.getItemsByHolder('player');
+        const roomItems = this.getItemsByHolder(this.currentRoom.id).filter(i => !i.isHidden);
+        const allItems = [...playerItems, ...roomItems];
+
+        const item = allItems.find(i => i.name.toLowerCase().includes(itemName.toLowerCase()));
+
+        if (!item) {
+            this.printImmediate("You don't see that here and you aren't holding it.", 'error-msg');
+            return;
+        }
+
+        // 2. Check Triggers
+        if (!this.triggers) {
+            this.printImmediate("Nothing happens.", 'system-msg');
+            return;
+        }
+
+        // Find matching trigger
+        const trigger = this.triggers.find(t =>
+            t.item === item.id &&
+            (!t.location || t.location === this.currentRoom.id)
+        );
+
+        if (trigger) {
+            // Check condition (simplified for now, usually just 'true' or secret state)
+            // For now, assume true if present
+
+            // Print Message
+            if (trigger.message) {
+                this.printImmediate(trigger.message, 'success-msg');
+            }
+
+            // Apply Effect
+            if (trigger.effect) {
+                if (trigger.effect.type === 'revealItem') {
+                    this.revealItem(trigger.effect.itemId);
+                } else if (trigger.effect.type === 'revealExit') {
+                    this.revealExit(trigger.effect.roomId, trigger.effect.dir);
+                }
+            }
+
+            // Broadcast Event
+            this.broadcastEvent(new GameEvent('action', `Player used ${item.name}.`, 'player'));
+            return;
+        }
+
+        this.printImmediate("You can't use that here.", 'system-msg');
     }
 
     npcGive(characterId, itemName, targetName) {
@@ -593,12 +674,22 @@ class Game {
         }
     }
 
+    getLocationName(locationId) {
+        // console.log(`[Game] Getting name for location: ${locationId}`, this.characters[locationId]);
+        if (!locationId) return 'somewhere';
+        if (this.world[locationId]) return this.world[locationId].name; // Changed from this.rooms to this.world
+        if (locationId === 'player') return 'your inventory';
+        if (this.characters[locationId]) return this.characters[locationId].name;
+        // console.warn(`[Game] Unknown location ID: ${locationId}`);
+        return 'somewhere';
+    }
+
     revealExit(roomId, direction) {
         const room = this.world[roomId];
         if (room && room.hiddenExits && room.hiddenExits[direction]) {
             room.exits[direction] = room.hiddenExits[direction];
             delete room.hiddenExits[direction];
-            this.printImmediate(`[DISCOVERY] A new path to the [${direction.toUpperCase()}] has been revealed!`, 'discovery-msg');
+            this.printImmediate(`[DISCOVERY] A new path to the [${direction.toUpperCase()}] has been revealed (in ${room.name})!`, 'discovery-msg');
             // Re-render if in that room
             if (this.currentRoom.id === roomId) this.look();
         }
@@ -608,7 +699,18 @@ class Game {
         const item = this.itemsData.find(i => i.id === itemId);
         if (item && item.isHidden) {
             item.isHidden = false;
-            this.printImmediate(`[DISCOVERY] You noticed something new: ${item.name}!`, 'discovery-msg');
+            let outcomes = [`You have revealed: ${item.name}`];
+
+            // Try to resolve location name
+            let locationName = '';
+            if (this.world[item.startLocation]) {
+                locationName = `(in ${this.world[item.startLocation].name})`;
+            } else if (this.characters[item.startLocation]) {
+                locationName = `(held by ${this.characters[item.startLocation].name})`;
+            }
+
+            this.printImmediate(`You have revealed: ${item.name} ${locationName}!`, 'success-msg');
+            this.broadcastEvent(new GameEvent('action', `Something was revealed in the ${locationName}.`, 'director'));
             // Re-render if in presence (complicated check, just assume director calls it appropriately)
         }
     }
