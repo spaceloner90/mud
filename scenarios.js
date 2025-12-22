@@ -66,6 +66,9 @@ async function loadScenarioData(game, id) {
         game.outroText = data.outroText;
         game.tickMessage = data.tickMessage;
 
+        // 8. Set Victory Condition
+        game.victoryCondition = data.victory;
+
         return data;
     } catch (err) {
         console.error("Failed to load scenario:", err);
@@ -79,6 +82,7 @@ const scenarios = {
         id: 1,
         title: "The Missing Signet Ring",
         description: "A mystery in the village of Oakhaven.",
+        playerRole: "Envoy",
         setup: async (game) => {
             try {
                 const data = await loadScenarioData(game, 1);
@@ -110,6 +114,7 @@ const scenarios = {
         id: 2,
         title: "The Manor Murder",
         description: "A classic whodunit in a storm-swept manor.",
+        playerRole: "Inspector",
         setup: async (game) => {
             try {
                 const data = await loadScenarioData(game, 2);
@@ -130,15 +135,15 @@ const scenarios = {
                     const reggie = game.characters['reggie'];
                     // Only start if Reggie is in Foyer and Player is in Foyer
                     if (reggie && reggie.currentRoomId === 'foyer' && game.currentRoom.id === 'foyer') {
-                        game.npcSay(reggie.id, "Inspector! Thank goodness you've arrived. The storm is getting worse by the minute.");
+                        game.npcSay(reggie.id, "Inspector! Thank goodness you've arrived. The storm is getting worse by the minute.", { skipReaction: true });
                         setTimeout(() => {
                             // Check again before continuing
                             if (game.currentRoom.id === 'foyer') {
-                                game.npcSay(reggie.id, "I've secured the scene as best I can, but frankly, I'm out of my depth. The body is in the Library.");
+                                game.npcSay(reggie.id, "I've secured the scene as best I can, but frankly, I'm out of my depth. The body is in the Library.", { skipReaction: true });
                                 setTimeout(() => {
                                     // Check one last time
                                     if (game.currentRoom.id === 'foyer') {
-                                        game.npcSay(reggie.id, "I can brief you on the suspects if you wish. Just ask. And also let me know when you are ready to SOLVE the case.");
+                                        game.npcSay(reggie.id, "I can brief you on the suspects if you wish. Just ask. And also let me know when you are ready to SOLVE the case.", { skipReaction: true });
                                     }
                                 }, 1500);
                             }

@@ -1,10 +1,11 @@
 class GameEvent {
-    constructor(type, description, sourceId, targetId = null) {
+    constructor(type, description, sourceId, targetId = null, options = {}) {
         this.type = type; // 'say', 'enter', 'leave', 'action'
         this.description = description;
         this.sourceId = sourceId;
         this.targetId = targetId; // Specific addressee (optional)
         this.timestamp = Date.now();
+        this.skipReaction = options.skipReaction || false;
     }
 }
 
@@ -31,6 +32,12 @@ class Character {
     }
 
     observe(event) {
+        // Suppress "leave" events for the mover themselves to avoid double-logging state changes covering the same move.
+        // They will rely on the subsequent "enter" event which now contains full context.
+        if (event.type === 'leave' && event.sourceId === this.id) {
+            return;
+        }
+
         this.memory.push(event);
         // Keep memory size manageable (e.g., last 50 events)
         if (this.memory.length > 50) {

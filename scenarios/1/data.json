@@ -24,5 +24,9 @@
                 "itemId": "signet_ring"
             }
         }
+    },
+    "victory": {
+        "condition": "item_held",
+        "itemId": "signet_ring"
     }
 }

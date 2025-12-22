@@ -49,8 +49,11 @@ class AIAgent {
         const eventsText = recentHistory.map(e => `[${new Date(e.timestamp).toISOString()}] ${e.sourceId}: ${e.description}`).join('\n');
 
         // Add Inventory Context
-        const myItems = this.game.getItemsByHolder(this.character.id).map(i => i.name).join(', ');
-        const inventoryText = myItems ? `You are holding: ${myItems}` : "You are holding nothing.";
+        const myItems = this.game.getItemsByHolder(this.character.id).map(i => {
+            const desc = (i.description || "").replace(/\n/g, " ");
+            return `[ID: ${i.id}] ${i.name} (${desc})`;
+        }).join('\n- ');
+        const inventoryText = myItems ? `You are holding:\n- ${myItems}` : "You are holding nothing.";
 
         // Add Room Context
         const room = this.game.world[this.character.currentRoomId];
@@ -60,7 +63,7 @@ class AIAgent {
         // Other characters in the room (excluding self)
         const others = this.game.getCharactersInRoom(this.character.currentRoomId)
             .filter(c => c.id !== this.character.id)
-            .map(c => `${c.name} (${c.description})`) // Include description for better context? User said "context including... other characters"
+            .map(c => `${c.name} (${c.description})`)
             .join('\n- ');
 
         const otherCharsText = others ? `Characters here:\n- ${others}` : "You are alone.";
@@ -68,9 +71,12 @@ class AIAgent {
         // Visible Items
         const visibleItems = this.game.getItemsByHolder(this.character.currentRoomId)
             .filter(i => !i.isHidden) // visible only
-            .map(i => i.name)
-            .join(', ');
-        const itemsText = visibleItems ? `Items here: ${visibleItems}` : "No items visible.";
+            .map(i => {
+                const desc = (i.description || "").replace(/\n/g, " ");
+                return `[ID: ${i.id}] ${i.name} (${desc})`;
+            })
+            .join('\n- ');
+        const itemsText = visibleItems ? `Items here:\n- ${visibleItems}` : "No items visible.";
 
         return `
 You are playing the role of an NPC in a fantasy text adventure game.
@@ -101,7 +107,7 @@ Instructions:
 5. Allowed Actions:
    - {"action": "say", "content": "..."}
    - {"action": "emote", "content": "..."} (e.g., "shrugs", "nods at You")
-   - {"action": "give", "item": "item name", "target": "recipient name"}
+   - {"action": "give", "item": "item_id", "target": "recipient name"}
    - {"action": "wait"} (Use if you decide to do nothing)
 6. You can combine actions (e.g., say something then emote).
 7. Keep responses short and conversational.
@@ -112,6 +118,10 @@ Response (JSON Array):
     }
 
     async callGemini(prompt) {
+        if (this.game.verboseLogging) {
+            console.log(`[AI Agent] System Prompt:\n${prompt}`);
+        }
+
         // Using gemini-2.0-flash-exp as requested
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${API_KEY}`;
 
@@ -137,6 +147,10 @@ Response (JSON Array):
 
             if (!data.candidates || data.candidates.length === 0) {
                 throw new Error('No candidates returned');
+            }
+
+            if (this.game.verboseLogging) {
+                console.log(`[AI Agent] Raw Response:\n${JSON.stringify(data, null, 2)}`);
             }
 
             const text = data.candidates[0].content.parts[0].text;

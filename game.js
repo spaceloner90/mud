@@ -4,6 +4,7 @@ class Game {
         this.input = document.getElementById('cmd');
         this.isProcessing = false;
         this.state = 'AUTH'; // Start in AUTH mode
+        this.verboseLogging = false; // Debug verbosity
 
         this.inputHandler = new InputHandler(this); // Initialize InputHandler
 
@@ -171,6 +172,14 @@ class Game {
                     this.coordinator.conversationPace = val;
                     console.log(`[Debug] Set Conversation Pace to ${val}ms`);
                 }
+            });
+        }
+
+        const verboseCheck = document.getElementById('verbose-check');
+        if (verboseCheck) {
+            verboseCheck.addEventListener('change', (e) => {
+                this.verboseLogging = e.target.checked;
+                console.log(`[Debug] Verbose Logging: ${this.verboseLogging}`);
             });
         }
 
@@ -375,7 +384,7 @@ class Game {
         this.output.appendChild(p);
         this.output.scrollTop = this.output.scrollHeight;
 
-        this.broadcastEvent(new GameEvent('say', `Player said to ${target.name}: "${text}"`, 'player', target.id));
+        this.broadcastEvent(new GameEvent('say', `${this.getPlayerLogName()} said to ${target.name}: "${text}"`, 'player', target.id));
         this.tick();
         return true;
     }
@@ -397,7 +406,7 @@ class Game {
 
         // Broadcast event
         // We use type 'action' for emotes/physical actions
-        this.broadcastEvent(new GameEvent('action', `Player ${text}`, 'player'));
+        this.broadcastEvent(new GameEvent('action', `${this.getPlayerLogName()} ${text}`, 'player'));
         this.tick();
     }
 
@@ -482,26 +491,76 @@ class Game {
         this.printImmediate(`Exits: [${exits}]`, 'room-exits');
     }
 
-    move(direction) {
-        if (this.currentRoom.exits[direction]) {
-            const nextRoomId = this.currentRoom.exits[direction];
+    move(direction, entityId = 'player') {
+        let currentRoomId;
+        let entityName;
 
-            const prevRoomName = this.currentRoom.name;
+        if (entityId === 'player') {
+            currentRoomId = this.currentRoom.id;
+            entityName = this.getPlayerLogName();
+        } else {
+            const char = this.characters[entityId];
+            if (!char) {
+                console.warn(`[Game] Rename move: Entity ${entityId} not found.`);
+                return;
+            }
+            currentRoomId = char.currentRoomId;
+            entityName = char.name;
+        }
+
+        const currentRoom = this.world[currentRoomId];
+        if (currentRoom.exits[direction]) {
+            const nextRoomId = currentRoom.exits[direction];
+
+            const prevRoomName = currentRoom.name;
             const nextRoomName = this.world[nextRoomId].name;
 
-            // Broadcast leave event to current room
-            this.broadcastEvent(new GameEvent('leave', `Player moved from ${prevRoomName} to ${nextRoomName}.`, 'player'));
+            // Broadcast leave event (Source Room)
+            // Note: We broadcast to the ROOM the entity is LEAVING
+            this.broadcastEvent(
+                new GameEvent('leave', `${entityName} left towards ${direction} (${nextRoomName}).`, entityId),
+                currentRoomId
+            );
 
-            this.currentRoom = this.world[nextRoomId];
+            // Update State
+            if (entityId === 'player') {
+                this.currentRoom = this.world[nextRoomId];
+                // Player-specific updates
+                this.tick();
+                this.look();
+            } else {
+                this.characters[entityId].currentRoomId = nextRoomId;
+            }
 
-            // Broadcast enter event to new room
-            this.broadcastEvent(new GameEvent('enter', `Player arrived from ${prevRoomName}.`, 'player'));
+            // Broadcast enter event (Dest Room)
+            const oppositeDir = this.getOppositeDirection(direction);
+            this.broadcastEvent(
+                new GameEvent('enter', `${entityName} arrived in ${nextRoomName} from the ${oppositeDir} (${prevRoomName}).`, entityId),
+                nextRoomId
+            );
 
-            this.tick();
-            this.look();
         } else {
-            this.printImmediate("You can't go that way.", 'error-msg');
+            if (entityId === 'player') {
+                this.printImmediate("You can't go that way.", 'error-msg');
+            } else {
+                // NPC hit a wall - silently fail or log?
+                // console.log(`[Game] NPC ${entityId} tried to move ${direction} but couldn't.`);
+            }
         }
+    }
+
+    getOppositeDirection(dir) {
+        const map = {
+            'north': 'south',
+            'south': 'north',
+            'east': 'west',
+            'west': 'east',
+            'n': 'south',
+            's': 'north',
+            'e': 'west',
+            'w': 'east'
+        };
+        return map[dir] || 'somewhere';
     }
 
     broadcastEvent(event, targetRoomId = null) {
@@ -510,17 +569,31 @@ class Game {
 
         if (!roomId) return;
 
-        // Find all characters in the target room
+        // 1. Notify Player UI if they are in this room
+        if (this.currentRoom && roomId === this.currentRoom.id && event.sourceId !== 'player') {
+            // Don't echo player's own actions doubly (input_handler handles that usually, or move() does)
+            // Actually, move() prints nothing for player move except room description.
+            // But for NPC move, we want to see it.
+            let className = 'system-msg';
+            if (event.type === 'say') className = 'dialogue'; // Styled differently usually, but simple here
+
+            // For movement, we want clear feedback
+            if (event.type === 'leave' || event.type === 'enter') {
+                this.printImmediate(event.description, 'system-msg');
+            }
+        }
+
+        // 2. Find all characters in the target room
         const chars = this.getCharactersInRoom(roomId);
         chars.forEach(c => c.observe(event));
 
-        // Notify Global Coordinator
+        // 3. Notify Global Coordinator
         if (this.coordinator) {
             this.coordinator.onEvent(event);
         }
     }
 
-    npcSay(characterId, text) {
+    npcSay(characterId, text, options = {}) {
         if (!this.currentRoom) return;
 
         const character = this.characters[characterId];
@@ -532,7 +605,10 @@ class Game {
         }
 
         // Broadcast event to the CHARACTER'S room, not necessarily the player's
-        this.broadcastEvent(new GameEvent('say', `${character.name} said: "${text}"`, characterId), character.currentRoomId);
+        this.broadcastEvent(
+            new GameEvent('say', `${character.name} said: "${text}"`, characterId, null, options),
+            character.currentRoomId
+        );
     }
 
     npcEmote(characterId, text) {
@@ -576,7 +652,8 @@ class Game {
         // Pick it up
         item.holderId = 'player';
         this.printImmediate(`You picked up the ${item.name}.`, 'system-msg');
-        this.broadcastEvent(new GameEvent('action', `Player picked up ${item.name}.`, 'player'));
+        const desc = (item.description || "").replace(/\n/g, " ");
+        this.broadcastEvent(new GameEvent('action', `${this.getPlayerLogName()} picked up ${item.name} (${desc}).`, 'player'));
         this.tick();
     }
 
@@ -624,7 +701,7 @@ class Game {
             }
 
             // Broadcast Event
-            this.broadcastEvent(new GameEvent('action', `Player used ${item.name}.`, 'player'));
+            this.broadcastEvent(new GameEvent('action', `${this.getPlayerLogName()} used ${item.name}.`, 'player'));
             this.tick();
             return;
         }
@@ -638,7 +715,9 @@ class Game {
 
         // Verify NPC has item
         const npcItems = this.getItemsByHolder(characterId);
-        const item = npcItems.find(i => i.name.toLowerCase().includes(itemName.toLowerCase()));
+        // Try ID first, then Name
+        const item = npcItems.find(i => i.id === itemName) ||
+            npcItems.find(i => i.name.toLowerCase().includes(itemName.toLowerCase()));
 
         if (!item) {
             console.warn(`[NPC ${npc.name}] Tried to give '${itemName}' but doesn't have it.`);
@@ -671,7 +750,12 @@ class Game {
         }
 
         // Broadcast
-        this.broadcastEvent(new GameEvent('action', `${npc.name} gave ${item.name} to ${recipient.name}.`, characterId));
+        const desc = (item.description || "").replace(/\n/g, " ");
+        let receiverName = recipient.name;
+        if (recipient.id === 'player') {
+            receiverName = this.getPlayerLogName();
+        }
+        this.broadcastEvent(new GameEvent('action', `${npc.name} gave ${item.name} (${desc}) to ${receiverName}.`, characterId));
     }
 
     toggleLoading(show) {
@@ -729,6 +813,11 @@ class Game {
             const msg = this.tickMessage || "You feel the passage of time.";
             this.printImmediate(msg, 'system-msg');
         }
+    }
+
+    getPlayerLogName() {
+        const role = (this.currentScenario && this.currentScenario.playerRole) ? this.currentScenario.playerRole : 'Player';
+        return `${role} (Player Character)`;
     }
 }
 

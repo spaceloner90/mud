@@ -127,8 +127,7 @@ class InputHandler {
             if (speech) {
                 this.game.printDialogue('You', speech);
                 // Broadcast speech event generic to the room
-                // User requested "Player says to the room" instead of listing names to avoid bias
-                this.game.broadcastEvent(new GameEvent('say', `Player said "${speech}" to the room`, 'player'));
+                this.game.broadcastEvent(new GameEvent('say', `${this.game.getPlayerLogName()} said "${speech}" to the room`, 'player'));
                 this.game.tick();
             } else {
                 this.game.printImmediate('What do you want to say?', 'error-msg');
@@ -227,11 +226,61 @@ class InputHandler {
         if (isCmd(verb, 'd', 'down')) { this.game.move('down'); return; }
 
         if (isCmd(verb, 'debug')) {
-            const targetName = parts.slice(1).join(' ').toLowerCase();
-            if (!targetName) {
-                this.game.printImmediate('Usage: debug <character_name>', 'error-msg');
+            // 1. Check for Forced Action (debug [target] [action] ...)
+            if (parts.length > 2) {
+                const targetMatch = parts[1].toLowerCase();
+                const actionVerb = parts[2].toLowerCase();
+                const actionArgs = parts.slice(3).join(' ');
+
+                const targetChar = Object.values(this.game.characters).find(c => c.name.toLowerCase().includes(targetMatch));
+                if (!targetChar) {
+                    this.game.printImmediate(`Debug Error: Character "${targetMatch}" not found for forced action.`, 'error-msg');
+                    return;
+                }
+
+                this.game.printImmediate(`[DEBUG] Forcing ${targetChar.name} to '${actionVerb}'...`, 'system-msg');
+
+                // Route Command
+                if (['n', 's', 'e', 'w', 'north', 'south', 'east', 'west', 'up', 'down', 'u', 'd'].includes(actionVerb)) {
+                    this.game.move(actionVerb, targetChar.id);
+                } else if (actionVerb === 'say') {
+                    if (!actionArgs) {
+                        this.game.printImmediate('Debug Syntax: debug [target] say [message]', 'error-msg');
+                        return;
+                    }
+                    this.game.npcSay(targetChar.id, actionArgs);
+                } else if (actionVerb === 'emote') {
+                    if (!actionArgs) {
+                        this.game.printImmediate('Debug Syntax: debug [target] emote [action]', 'error-msg');
+                        return;
+                    }
+                    this.game.npcEmote(targetChar.id, actionArgs);
+                } else if (actionVerb === 'give') {
+                    // debug chef give soup player
+                    const args = parts.slice(3);
+                    if (args.length < 2) {
+                        this.game.printImmediate('Debug Syntax: debug [target] give [item] [recipient]', 'error-msg');
+                        return;
+                    }
+                    // Simple parsing for debug: LAST word is recipient, rest is item
+                    const recipientName = args[args.length - 1];
+                    const itemName = args.slice(0, args.length - 1).join(' ');
+                    this.game.npcGive(targetChar.id, itemName, recipientName);
+                } else if (actionVerb === 'wait') {
+                    this.game.printImmediate(`[DEBUG] ${targetChar.name} waits.`, 'system-msg');
+                } else {
+                    this.game.printImmediate(`[DEBUG] Unknown forced verb: '${actionVerb}'`, 'error-msg');
+                }
                 return;
             }
+
+            // 2. Default: Inspect Character
+            const targetName = parts.slice(1).join(' ').toLowerCase();
+            if (!targetName) {
+                this.game.printImmediate('Usage: debug <character_name> [optional command]', 'error-msg');
+                return;
+            }
+
             if (targetName === 'director') {
                 this.game.printImmediate('--- DEBUG: Director (Global History) ---', 'system-msg');
                 if (this.game.coordinator && this.game.coordinator.history) {
@@ -299,7 +348,8 @@ class InputHandler {
             if (itemToGive && recipient) {
                 itemToGive.holderId = recipient.id;
                 this.game.printImmediate(`You gave the ${itemToGive.name} to ${recipient.name}.`, 'system-msg');
-                this.game.broadcastEvent(new GameEvent('action', `Player gave ${itemToGive.name} to ${recipient.name}.`, 'player'));
+                const desc = (itemToGive.description || "").replace(/\n/g, " ");
+                this.game.broadcastEvent(new GameEvent('action', `${this.game.getPlayerLogName()} gave ${itemToGive.name} (${desc}) to ${recipient.name}.`, 'player'));
                 this.game.tick();
             } else if (bestMatchItem) {
                 this.game.printImmediate("You don't see them here.", 'error-msg');

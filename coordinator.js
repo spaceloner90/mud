@@ -22,14 +22,25 @@ class AICoordinator {
         // Redundancy Check: The 'leave' event ("Player moved from A to B") provides sufficient context.
         // The 'enter' event ("Player arrived from A") is redundant for the Director.
         if (event.type === 'enter') return;
+        if (event.type === 'enter') return;
+        if (event.sourceId === 'director') return;
+        if (event.skipReaction) {
+            console.log(`[Director] Ignoring event (skipReaction): ${event.description}`);
+            return;
+        }
 
         this.history.push(event);
         console.log(`[Director] Recorded: ${event.type} - ${event.description}`);
 
         // Check for VICTORY
-        if (this.game.getItemsByHolder('player').some(i => i.id === 'signet_ring')) {
-            this.game.victory();
-            return;
+        const victory = this.game.victoryCondition;
+        if (victory) {
+            if (victory.condition === 'item_held' && victory.itemId) {
+                if (this.game.getItemsByHolder('player').some(i => i.id === victory.itemId)) {
+                    this.game.victory();
+                    return;
+                }
+            }
         }
 
         // DEBOUNCE REACTION LOGIC
@@ -101,7 +112,6 @@ class AICoordinator {
     async directorThink(options = { allowResponse: true }) {
         if (this.isThinking) return;
 
-        // Find NPCs in the current room
         // Find NPCs in the current room
         const currentRoomId = this.game.currentRoom.id;
         let potentialResponders = this.game.getCharactersInRoom(currentRoomId).filter(c => c.id !== 'player');
@@ -295,6 +305,10 @@ Response Format (JSON):
     }
 
     async callGemini(prompt) {
+        if (this.game.verboseLogging) {
+            console.log(`[Director] System Prompt:\n${prompt}`);
+        }
+
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${API_KEY}`;
         try {
             const response = await fetch(url, {
@@ -306,6 +320,11 @@ Response Format (JSON):
             });
             if (!response.ok) throw new Error(await response.text());
             const data = await response.json();
+
+            if (this.game.verboseLogging) {
+                console.log(`[Director] Raw Response:\n${JSON.stringify(data, null, 2)}`);
+            }
+
             if (!data.candidates || !data.candidates.length) throw new Error('No candidates');
             const text = data.candidates[0].content.parts[0].text;
 
